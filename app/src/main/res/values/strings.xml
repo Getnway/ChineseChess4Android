@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ChineseChess4Android</string>
+    <string name="app_name">中国象棋</string>
 
     <string name="hello_world">Hello world!</string>
     <string name="low_rank">初级</string>

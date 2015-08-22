@@ -13,10 +13,11 @@ import android.widget.Button;
 
 public class MainActivity extends Activity implements View.OnClickListener {
 
-    private Button btnLowRank;
-    private Button btnMiddleRank;
-    private Button btnHighRank;
-    private Button btnBluetooth;
+    private Button mBtnLowRank;
+    private Button mBtnMiddleRank;
+    private Button mBtnHighRank;
+    private Button mBtnBluetooth;
+    GameView gameView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,14 +31,14 @@ public class MainActivity extends Activity implements View.OnClickListener {
         setContentView(R.layout.activity_main);
 
         //找按钮控件，并设置监听
-        btnLowRank = (Button) findViewById(R.id.btn_low_rank);
-        btnLowRank.setOnClickListener(this);
-        btnMiddleRank = (Button) findViewById(R.id.btn_middle_rank);
-        btnMiddleRank.setOnClickListener(this);
-        btnHighRank = (Button) findViewById(R.id.btn_high_rank);
-        btnHighRank.setOnClickListener(this);
-        btnBluetooth = (Button) findViewById(R.id.btn_bluetooth);
-        btnBluetooth.setOnClickListener(this);
+        mBtnLowRank = (Button) findViewById(R.id.btn_low_rank);
+        mBtnLowRank.setOnClickListener(this);
+        mBtnMiddleRank = (Button) findViewById(R.id.btn_middle_rank);
+        mBtnMiddleRank.setOnClickListener(this);
+        mBtnHighRank = (Button) findViewById(R.id.btn_high_rank);
+        mBtnHighRank.setOnClickListener(this);
+        mBtnBluetooth = (Button) findViewById(R.id.btn_bluetooth);
+        mBtnBluetooth.setOnClickListener(this);
     }
 
     @Override
@@ -45,6 +46,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
         switch (v.getId()){
             case R.id.btn_low_rank:
                 LogUtil.i(getLocalClassName(), "btn_low_rank");
+                gameView = new GameView(this);
+                setContentView(gameView);
                 break;
             case R.id.btn_middle_rank:
                 LogUtil.i(getLocalClassName(), "btn_middle_rank");
