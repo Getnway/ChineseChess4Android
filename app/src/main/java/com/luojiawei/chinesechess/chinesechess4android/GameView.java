@@ -4,11 +4,16 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.ColorFilter;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
+import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.ImageView;
+
+import java.io.InputStream;
 
 /**
  * Created by L1 on 15-08-21.
@@ -25,11 +30,19 @@ public class GameView extends ImageView {
     Bitmap mBmChessboard;   //棋盘
     Bitmap[] mBmAllChess = new Bitmap[14]; //棋子
     Bitmap mBmSelectBox;   //选择框
-    Rect mBoardDst; //棋盘目标位置
     boolean isSelectFrom = false;   //是否已选择棋子起点
 
     public GameView(Context context) {
         super(context);
+        init(context);
+    }
+
+    public GameView(Context context, AttributeSet attributeSet){
+        super(context, attributeSet);
+        init(context);
+    }
+
+    private void init(Context context) {
         //获取屏幕高度和宽度
         DisplayMetrics dm = getResources().getDisplayMetrics();
         mScreenW = dm.widthPixels;
@@ -37,28 +50,30 @@ public class GameView extends ImageView {
 
         loadResoure();
         ChessboardUtil.startup();
+        mBmChessboard = BitmapFactory.decodeResource(getResources(), R.drawable.board2);
 //        float ratioHW = (float) mBmChessboard.getHeight() / mBmChessboard.getWidth();   //根据棋盘资源算出高宽比
 //        mBoardMargin = (int)((mScreenH-mScreenW * ratioHW)/2);  //再根据当前屏幕宽度算出对应高度，进而算出棋盘上（下）边缘外边距
         mChessSize = mScreenW / 9;    //横向9个棋位
         mBoardMargin = (mScreenH - mChessSize * 10) / 2;  //纵向10个棋位
-        mBoardDst = new Rect(0, mBoardMargin, mScreenW, mScreenH - mBoardMargin);
+
+//        mBmChessboard = Bitmap.createScaledBitmap(mBmChessboard,mScreenW,mScreenW/9*10,false);
 
         //设置背景
-        setBackgroundResource(R.drawable.board2);
+//        setBackgroundResource(R.drawable.bg2);
+        setImageBitmap(Bitmap.createScaledBitmap(mBmChessboard,mScreenW,mScreenW/9*10,false));
 
         LogUtil.i("GameView", "Screen:" + String.valueOf(mScreenH) + " X " + String.valueOf(mScreenW));
         LogUtil.i("GameView", "ChessSize:" + String.valueOf(mChessSize));
     }
 
     public void newGame(){
-        
+
     }
 
     /**
      * 载入资源
      */
     private void loadResoure() {
-        mBmChessboard = BitmapFactory.decodeResource(getResources(), R.drawable.board2);
         mBmSelectBox = BitmapFactory.decodeResource(getResources(), R.drawable.sel);
         Bitmap tmpAllChess = BitmapFactory.decodeResource(getResources(), R.drawable.qz);
         int chessSize = tmpAllChess.getHeight() / 3;  //棋子图片为3行14列
@@ -113,8 +128,9 @@ public class GameView extends ImageView {
 
     @Override
     public void onDraw(Canvas canvas) {
+        mBoardMargin = 0;
         //绘制棋盘
-//        canvas.drawBitmap(mBmChessboard, null, mBoardDst, null);
+        canvas.drawBitmap(mBmChessboard, null, new Rect(0,0,mScreenW,mScreenW/9*10), null);
 
         //绘制棋子
         for (int i = 0; i < 256; ++i) {
@@ -207,6 +223,7 @@ public class GameView extends ImageView {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        LogUtil.i(Tag,"Touch:("+String.valueOf(event.getX())+", "+String.valueOf(event.getY())+")");
         clickX = event.getX();
         clickY = event.getY();
         //点击在棋盘内

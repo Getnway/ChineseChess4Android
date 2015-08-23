@@ -1,6 +1,7 @@
 package com.luojiawei.chinesechess.chinesechess4android;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -51,6 +52,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 break;
             case R.id.btn_middle_rank:
                 LogUtil.i(getLocalClassName(), "btn_middle_rank");
+                Intent intent = new Intent(MainActivity.this,GameActivity.class);
+                startActivity(intent);
                 break;
             case R.id.btn_high_rank:
                 LogUtil.i(getLocalClassName(), "btn_high_rank");
