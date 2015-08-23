@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.ImageView;
 
@@ -20,10 +21,12 @@ public class GameView extends ImageView {
     int mChessSize;  //棋子长宽
     float clickX, clickY;   //点击坐标
     int row = -1, column = -1;
+    int row2 = -1, column2 = -1;
     Bitmap mBmChessboard;   //棋盘
     Bitmap[] mBmAllChess = new Bitmap[14]; //棋子
-    Bitmap mBmSelectFrom, mBmSelectTo;   //选择框
+    Bitmap mBmSelectBox;   //选择框
     Rect mBoardDst; //棋盘目标位置
+    boolean isSelectFrom = false;   //是否已选择棋子起点
 
     public GameView(Context context) {
         super(context);
@@ -41,10 +44,14 @@ public class GameView extends ImageView {
         mBoardDst = new Rect(0, mBoardMargin, mScreenW, mScreenH - mBoardMargin);
 
         //设置背景
-        setBackgroundResource(R.drawable.bg2);
+        setBackgroundResource(R.drawable.board2);
 
         LogUtil.i("GameView", "Screen:" + String.valueOf(mScreenH) + " X " + String.valueOf(mScreenW));
         LogUtil.i("GameView", "ChessSize:" + String.valueOf(mChessSize));
+    }
+
+    public void newGame(){
+        
     }
 
     /**
@@ -52,8 +59,7 @@ public class GameView extends ImageView {
      */
     private void loadResoure() {
         mBmChessboard = BitmapFactory.decodeResource(getResources(), R.drawable.board2);
-        mBmSelectFrom = BitmapFactory.decodeResource(getResources(), R.drawable.sel);
-        mBmSelectTo = BitmapFactory.decodeResource(getResources(), R.drawable.sel);
+        mBmSelectBox = BitmapFactory.decodeResource(getResources(), R.drawable.sel);
         Bitmap tmpAllChess = BitmapFactory.decodeResource(getResources(), R.drawable.qz);
         int chessSize = tmpAllChess.getHeight() / 3;  //棋子图片为3行14列
         for (int i = 0; i < 14; ++i) {
@@ -101,10 +107,14 @@ public class GameView extends ImageView {
         return (int) ((clickY - mBoardMargin) / mChessSize);
     }
 
+    private int getMove(int x, int y) {
+        return (x + ChessboardUtil.BOARD_LEFT) * 16 + (y + ChessboardUtil.BOARD_TOP);
+    }
+
     @Override
     public void onDraw(Canvas canvas) {
         //绘制棋盘
-        canvas.drawBitmap(mBmChessboard, null, mBoardDst, null);
+//        canvas.drawBitmap(mBmChessboard, null, mBoardDst, null);
 
         //绘制棋子
         for (int i = 0; i < 256; ++i) {
@@ -114,14 +124,24 @@ public class GameView extends ImageView {
         }
 
         //绘制选择框
+
         if (row >= 0 && column >= 0) {
-            canvas.drawBitmap(mBmSelectFrom, null, new Rect(board2ScreenX(column), board2ScreenY(row), board2ScreenX(column) + mChessSize, board2ScreenY(row) + mChessSize), null);
+            LogUtil.i(Tag, "drawFrom");
+            isSelectFrom = true;
+            canvas.drawBitmap(mBmSelectBox, null, new Rect(board2ScreenX(column), board2ScreenY(row), board2ScreenX(column) + mChessSize, board2ScreenY(row) + mChessSize), null);
+        }
+        if (isSelectFrom && row2 >= 0 && column2 >= 0) {
+            LogUtil.i(Tag, "drawTo");
+            isSelectFrom = false;
+            canvas.drawBitmap(mBmSelectBox, null, new Rect(board2ScreenX(column2), board2ScreenY(row2), board2ScreenX(column2) + mChessSize, board2ScreenY(row2) + mChessSize), null);
         }
     }
 
+
     /**
      * 绘制棋子
-     * @param canvas Canvas对象
+     *
+     * @param canvas   Canvas对象
      * @param position 棋子在棋盘的位置
      */
     private void drawPiece(Canvas canvas, int position) {
@@ -173,18 +193,51 @@ public class GameView extends ImageView {
         }
     }
 
+    /**
+     * 绘制选择框
+     * @param canvas Canvas对象
+     * @param position 选择框在棋盘的位置
+     */
+    private void drawSelectBox(Canvas canvas, int position) {
+        int screenX = board2ScreenX(ChessboardUtil.getCoordX(position) - ChessboardUtil.BOARD_LEFT);
+        int screenY = board2ScreenY(ChessboardUtil.getCoordY(position) - ChessboardUtil.BOARD_TOP);
+        canvas.drawBitmap(mBmSelectBox, null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
+
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         clickX = event.getX();
         clickY = event.getY();
         //点击在棋盘内
         if (clickY >= mBoardMargin && clickY <= mScreenH - mBoardMargin) {
-            column = screen2BoardX(clickX);    //根据横坐标计算点击在第几列
-            row = screen2BoardY(clickY);   //根据纵坐标计算点击在第几行
-            LogUtil.i("GameView", "in :" + String.valueOf(row) + "--" + String.valueOf(column));
+            if (!isSelectFrom) {  //如果还未选择棋子起点
+                column = screen2BoardX(clickX);
+                row = screen2BoardY(clickY);
+                if (ChessboardUtil.currentMap[ChessboardUtil.getCoordPoint(column + 3, row + 3)] != 0) { //选中棋子
+                    invalidate();   //调用onDraw()绘制起点选择框
+                }
+            } else {
+                column2 = screen2BoardX(clickX);
+                row2 = screen2BoardY(clickY);
+                int mv = ((row2 + 3) * 16 + (column2 + 3)) * 256 + ((row + 3) * 16 + (column + 3));
+                LogUtil.i(Tag, "mv:" + String.valueOf(mv));
+                LogUtil.i(Tag, "From: " + String.valueOf(row) + "-" + String.valueOf(column));
+                LogUtil.i(Tag, "To: " + String.valueOf(row2) + "-" + String.valueOf(column2));
+                LogUtil.i(Tag, "From " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
+                ChessboardUtil.makeMove(mv);
+                invalidate();
+            }
+
+//            LogUtil.i("GameView", "in :" + String.valueOf(row) + "--" + String.valueOf(column));
         }
-        LogUtil.i("GameView", "coord: Y=" + String.valueOf(clickY - mBoardMargin) + "--X=" + String.valueOf(clickX) + "--Size=" + String.valueOf(mChessSize));
-        invalidate();   //调用onDraw()
+//        LogUtil.i("GameView", "coord: Y=" + String.valueOf(clickY - mBoardMargin) + "--X=" + String.valueOf(clickX) + "--Size=" + String.valueOf(mChessSize));
+//        invalidate();   //调用onDraw()
         return super.onTouchEvent(event);
+    }
+
+    private int getPosition(float x, float y) {
+
+        return 0;
     }
 }
