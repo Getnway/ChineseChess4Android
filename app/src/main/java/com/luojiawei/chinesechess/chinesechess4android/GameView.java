@@ -22,6 +22,8 @@ import java.io.InputStream;
  */
 public class GameView extends ImageView {
     String Tag = "GameView";
+    int RED = 0, BLACK = 1;  //选择框颜色
+    int screenX, screenY;   //棋盘对应的屏幕坐标
     int mScreenW, mScreenH; //屏幕宽高
     int mChessSize;  //棋子长宽
     int posFrom = -1, posTo = -1;  //棋子起点和终点
@@ -30,6 +32,7 @@ public class GameView extends ImageView {
     Bitmap[] mBmAllChess = new Bitmap[14]; //棋子
     Bitmap mBmSelectBoxRed, mBmSelectBoxBlack;   //选择框
     boolean isSelectFrom = false;   //是否已选择棋子起点
+    boolean isFilpped = false;  //是否翻转棋盘
 
     public GameView(Context context) {
         super(context);
@@ -91,27 +94,18 @@ public class GameView extends ImageView {
             }
         }
 
-        int screenX,screenY;
         //绘制选择框
         if (posFrom >= 0) {
-            screenX = mChessSize * (ChessboardUtil.getCoordX(posFrom) - ChessboardUtil.BOARD_LEFT);
-            screenY = mChessSize * (ChessboardUtil.getCoordY(posFrom) - ChessboardUtil.BOARD_TOP);
-            canvas.drawBitmap(mBmSelectBoxBlack, null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
+            drawSelectBox(canvas, posFrom, BLACK);
         }
         if (posTo >= 0) {
-            screenX = mChessSize * (ChessboardUtil.getCoordX(posTo) - ChessboardUtil.BOARD_LEFT);
-            screenY = mChessSize * (ChessboardUtil.getCoordY(posTo) - ChessboardUtil.BOARD_TOP);
-            canvas.drawBitmap(mBmSelectBoxBlack, null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
+            drawSelectBox(canvas, posTo, BLACK);
         }
         if (posFromOpp >= 0) {
-            screenX = mChessSize * (ChessboardUtil.getCoordX(posFromOpp) - ChessboardUtil.BOARD_LEFT);
-            screenY = mChessSize * (ChessboardUtil.getCoordY(posFromOpp) - ChessboardUtil.BOARD_TOP);
-            canvas.drawBitmap(mBmSelectBoxRed, null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
+            drawSelectBox(canvas, posFromOpp, RED);
         }
         if (posToOpp >= 0) {
-            screenX = mChessSize * (ChessboardUtil.getCoordX(posToOpp) - ChessboardUtil.BOARD_LEFT);
-            screenY = mChessSize * (ChessboardUtil.getCoordY(posToOpp) - ChessboardUtil.BOARD_TOP);
-            canvas.drawBitmap(mBmSelectBoxRed, null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
+            drawSelectBox(canvas, posToOpp, RED);
         }
 
     }
@@ -123,8 +117,16 @@ public class GameView extends ImageView {
      * @param position 棋子在棋盘的位置
      */
     private void drawPiece(Canvas canvas, int position) {
-        int screenX = mChessSize * (ChessboardUtil.getCoordX(position) - ChessboardUtil.BOARD_LEFT);
-        int screenY = mChessSize * (ChessboardUtil.getCoordY(position) - ChessboardUtil.BOARD_TOP);
+        if(isFilpped){  //如果翻转了棋盘
+            int tmpPosition = ChessboardUtil.centreFlip(position);
+            screenX = mChessSize * (ChessboardUtil.getCoordX(tmpPosition) - ChessboardUtil.BOARD_LEFT);
+            screenY = mChessSize * (ChessboardUtil.getCoordY(tmpPosition) - ChessboardUtil.BOARD_TOP);
+        }else{
+            screenX = mChessSize * (ChessboardUtil.getCoordX(position) - ChessboardUtil.BOARD_LEFT);
+            screenY = mChessSize * (ChessboardUtil.getCoordY(position) - ChessboardUtil.BOARD_TOP);
+        }
+//        LogUtil.i(Tag,"drawPiece Position:"+String.valueOf(position));
+//        LogUtil.i(Tag,"drawPiece Flag:"+String.valueOf(ChessboardUtil.currentMap[position]));
         switch (ChessboardUtil.currentMap[position]) {
             case 16:    //帅
                 canvas.drawBitmap(mBmAllChess[7], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
@@ -177,23 +179,29 @@ public class GameView extends ImageView {
      * @param canvas   Canvas对象
      * @param position 选择框在棋盘的位置
      */
-    private void drawSelectBox(Canvas canvas, int position) {
-        LogUtil.i(Tag,"Form " + String.valueOf(posFrom) + " To " +String.valueOf(posTo));
-        LogUtil.i(Tag,"Form " + String.valueOf(posFromOpp) + " To " +String.valueOf(posToOpp));
-        int screenX = mChessSize * (ChessboardUtil.getCoordX(position) - ChessboardUtil.BOARD_LEFT);
-        int screenY = mChessSize * (ChessboardUtil.getCoordY(position) - ChessboardUtil.BOARD_TOP);
-        if(ChessboardUtil.sdPlayer == 0){   //轮到红色走棋，即上一步为黑色走棋，绘制红色选择框
+    private void drawSelectBox(Canvas canvas, int position, int color) {
+        if(isFilpped){  //如果翻转了棋盘
+            position = ChessboardUtil.centreFlip(position);
+        }
+        LogUtil.i(Tag, "SelectBox:\t" + String.valueOf(ChessboardUtil.getMoveSrc(position)));
+        screenX = mChessSize * (ChessboardUtil.getCoordX(position) - ChessboardUtil.BOARD_LEFT);
+        screenY = mChessSize * (ChessboardUtil.getCoordY(position) - ChessboardUtil.BOARD_TOP);
+        if (color == RED) {   //轮到红色走棋，即上一步为黑色走棋，绘制红色选择框
             canvas.drawBitmap(mBmSelectBoxRed, null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
-        }else{
+        } else {
             canvas.drawBitmap(mBmSelectBoxBlack, null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
         }
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        LogUtil.i(Tag, "Touch:(" + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()) + ")");
+        LogUtil.i(Tag, "Touch:\t(" + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()) + ")--------------------------------");
         int pos = getPosition(event.getX(), event.getY());  //点击的棋盘位置
-        LogUtil.i(Tag, "Point:" + String.valueOf(pos));
+        LogUtil.i(Tag, "Point:\t" + String.valueOf(pos));
+        if(isFilpped){  //如果翻转了棋盘
+            pos = ChessboardUtil.centreFlip(pos);
+        }
+        LogUtil.i(Tag,"Piece:\t"+String.valueOf(ChessboardUtil.currentMap[pos]));
         int chessFlag = ChessboardUtil.currentMap[pos]; //点击位置的棋子
 
         // 如果点击自己的子，那么直接选中该子
@@ -216,8 +224,8 @@ public class GameView extends ImageView {
                 posToOpp = pos;
                 mv = ChessboardUtil.getMove(posFromOpp, posToOpp); //获取走法
             }
-            LogUtil.i(Tag, "mv:" + String.valueOf(mv));
-            LogUtil.i(Tag, "From " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
+            LogUtil.i(Tag, "mv:\t" + String.valueOf(mv));
+            LogUtil.i(Tag, "Piece:\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
             ChessboardUtil.makeMove(mv);    //走一步棋
             isSelectFrom = false;
             invalidate();   //重绘棋盘
