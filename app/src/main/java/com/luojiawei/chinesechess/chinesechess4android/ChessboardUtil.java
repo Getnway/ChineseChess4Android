@@ -129,7 +129,7 @@ public class ChessboardUtil {
 
     // 根据起点和终点获得走法
     public static int getMove(int sqSrc, int sqDst) {
-        return sqSrc + sqDst << 8;
+        return sqSrc + sqDst * 256;
     }
 
 }
