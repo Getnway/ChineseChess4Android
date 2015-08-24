@@ -5,11 +5,17 @@ import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 
 
-public class GameActivity extends Activity {
+public class GameActivity extends Activity implements View.OnClickListener {
+    String TAG = "GameActivity";
+    Button mBtnNewGame;
+    Button mBtnFlipBoard;
+    GameView gameView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,6 +27,13 @@ public class GameActivity extends Activity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN
         );
         setContentView(R.layout.activity_game);
+
+        mBtnNewGame = (Button)findViewById(R.id.btn_new_game);
+        mBtnNewGame.setOnClickListener(this);
+        mBtnFlipBoard = (Button)findViewById(R.id.btn_flip_board);
+        mBtnFlipBoard.setOnClickListener(this);
+
+        gameView = (GameView)findViewById(R.id.game_view);
     }
 
     @Override
@@ -43,5 +56,21 @@ public class GameActivity extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.btn_new_game:
+                LogUtil.i(TAG,"newGameClick");
+                gameView.newGame();
+                break;
+            case R.id.btn_flip_board:
+                LogUtil.i(TAG,"flipBoardClick");
+                gameView.flipBoard();
+                break;
+            default:
+                break;
+        }
     }
 }

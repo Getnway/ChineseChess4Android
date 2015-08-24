@@ -54,16 +54,29 @@ public class GameView extends ImageView {
         ChessboardUtil.startup();
         mChessSize = mScreenW / 9;    //横向9个棋位
 
-//        mBmChessboard = Bitmap.createScaledBitmap(mBmChessboard,mScreenW,mScreenW/9*10,false);
-
         setImageBitmap(Bitmap.createScaledBitmap(mBmSelectBoxRed, mScreenW, mScreenW / 9 * 10, false));   //可确定布局大小
 
         LogUtil.i("GameView", "Screen:" + String.valueOf(mScreenH) + " X " + String.valueOf(mScreenW));
         LogUtil.i("GameView", "ChessSize:" + String.valueOf(mChessSize));
     }
 
+    /**
+     * 新游戏
+     */
     public void newGame() {
+        LogUtil.i(Tag, "newGame()  " + this.toString());
+        ChessboardUtil.startup();
+        posFrom = posTo = posFromOpp = posToOpp = -1;
+        invalidate();
+    }
 
+    /**
+     * 翻转棋盘
+     */
+    public void flipBoard() {
+        LogUtil.i(Tag, "flipBoard()");
+        isFilpped = !isFilpped;
+        invalidate();
     }
 
     /**
@@ -117,11 +130,11 @@ public class GameView extends ImageView {
      * @param position 棋子在棋盘的位置
      */
     private void drawPiece(Canvas canvas, int position) {
-        if(isFilpped){  //如果翻转了棋盘
+        if (isFilpped) {  //如果翻转了棋盘
             int tmpPosition = ChessboardUtil.centreFlip(position);
             screenX = mChessSize * (ChessboardUtil.getCoordX(tmpPosition) - ChessboardUtil.BOARD_LEFT);
             screenY = mChessSize * (ChessboardUtil.getCoordY(tmpPosition) - ChessboardUtil.BOARD_TOP);
-        }else{
+        } else {
             screenX = mChessSize * (ChessboardUtil.getCoordX(position) - ChessboardUtil.BOARD_LEFT);
             screenY = mChessSize * (ChessboardUtil.getCoordY(position) - ChessboardUtil.BOARD_TOP);
         }
@@ -180,7 +193,7 @@ public class GameView extends ImageView {
      * @param position 选择框在棋盘的位置
      */
     private void drawSelectBox(Canvas canvas, int position, int color) {
-        if(isFilpped){  //如果翻转了棋盘
+        if (isFilpped) {  //如果翻转了棋盘
             position = ChessboardUtil.centreFlip(position);
         }
         LogUtil.i(Tag, "SelectBox:\t" + String.valueOf(ChessboardUtil.getMoveSrc(position)));
@@ -195,13 +208,13 @@ public class GameView extends ImageView {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        LogUtil.i(Tag, "Touch:\t(" + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()) + ")--------------------------------");
+        LogUtil.i(Tag, "Touch:\t(" + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()) + ")--------------------------------" + this.toString());
         int pos = getPosition(event.getX(), event.getY());  //点击的棋盘位置
         LogUtil.i(Tag, "Point:\t" + String.valueOf(pos));
-        if(isFilpped){  //如果翻转了棋盘
+        if (isFilpped) {  //如果翻转了棋盘
             pos = ChessboardUtil.centreFlip(pos);
         }
-        LogUtil.i(Tag,"Piece:\t"+String.valueOf(ChessboardUtil.currentMap[pos]));
+        LogUtil.i(Tag, "Piece:\t" + String.valueOf(ChessboardUtil.currentMap[pos]));
         int chessFlag = ChessboardUtil.currentMap[pos]; //点击位置的棋子
 
         // 如果点击自己的子，那么直接选中该子
