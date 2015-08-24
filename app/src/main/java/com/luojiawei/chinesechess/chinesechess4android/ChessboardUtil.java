@@ -13,15 +13,6 @@ public class ChessboardUtil {
     public final static int BOARD_LEFT = 3;
     public final static int BOARD_RIGHT = 11;
 
-    // 棋子编号
-    public final static int PIECE_KING = 0;
-    public final static int PIECE_ADVISOR = 1;
-    public final static int PIECE_BISHOP = 2;
-    public final static int PIECE_KNIGHT = 3;
-    public final static int PIECE_ROOK = 4;
-    public final static int PIECE_CANNON = 5;
-    public final static int PIECE_PAWN = 6;
-
 
     public static void startup() {            // 初始化棋盘
         sdPlayer = 0;
@@ -42,19 +33,36 @@ public class ChessboardUtil {
         currentMap[sq] = 0;
     }
 
-    public static void movePiece(int mv) {         // 搬一步棋的棋子
-        int sqSrc, sqDst, pc;
+    public static int movePiece(int mv) {         // 搬一步棋的棋子
+        int sqSrc, sqDst, pc, pcDst;
         sqSrc = getMoveSrc(mv);
         sqDst = getMoveDst(mv);
+        pcDst = currentMap[sqDst];
         delPiece(sqDst);
         pc = currentMap[sqSrc];
         delPiece(sqSrc);
         addPiece(sqDst, pc);
+        return pcDst;
     }
 
-    public static void makeMove(int mv) {         // 走一步棋
-        movePiece(mv);
+    public static void undoMovePiece(int mv, int pcCaptured) {      // 撤消搬一步棋的棋子
+        int sqSrc, sqDst, pc;
+        sqSrc = getMoveSrc(mv);
+        sqDst = getMoveDst(mv);
+        pc = currentMap[sqDst];
+        delPiece(sqDst);
+        addPiece(sqSrc, pc);
+        addPiece(sqDst, pcCaptured);
+    }
+
+    public static boolean makeMove(int mv) {         // 走一步棋
+        int pc = movePiece(mv);
+        if(Rule.isChecked()){
+            undoMovePiece(mv,pc);
+            return false;
+        }
         changeSide();
+        return true;
     }
 
     //起始棋局
@@ -130,6 +138,11 @@ public class ChessboardUtil {
     // 根据起点和终点获得走法
     public static int getMove(int sqSrc, int sqDst) {
         return sqSrc + sqDst * 256;
+    }
+
+    // 走法水平镜像
+    public static int getFlipMove(int mv) {
+        return getMove(centreFlip(getMoveSrc(mv)), centreFlip(getMoveDst(mv)));
     }
 
 }

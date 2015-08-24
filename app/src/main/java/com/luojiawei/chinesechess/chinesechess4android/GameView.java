@@ -13,6 +13,7 @@ import android.util.Log;
 import android.util.Size;
 import android.view.MotionEvent;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.io.InputStream;
 
@@ -237,11 +238,20 @@ public class GameView extends ImageView {
                 posToOpp = pos;
                 mv = ChessboardUtil.getMove(posFromOpp, posToOpp); //获取走法
             }
-            LogUtil.i(Tag, "mv:\t" + String.valueOf(mv));
-            LogUtil.i(Tag, "Piece:\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
-            ChessboardUtil.makeMove(mv);    //走一步棋
-            isSelectFrom = false;
-            invalidate();   //重绘棋盘
+            if(Rule.isLegalMove(mv)){
+                if(ChessboardUtil.makeMove(mv)){    //没被将军，走棋成功
+                    if(Rule.isMate()){
+                        Toast.makeText(getContext(), R.string.is_win,Toast.LENGTH_LONG);
+                        LogUtil.i(Tag,"*********Win*********");
+                    }
+                    LogUtil.i(Tag, "mv:\t" + String.valueOf(mv));
+                    LogUtil.i(Tag, "Piece:\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
+                    isSelectFrom = false;
+                    invalidate();   //重绘棋盘
+                }else{
+                    LogUtil.i(Tag,"********isCheck*******");
+                }
+            }
         }
 
         return super.onTouchEvent(event);
