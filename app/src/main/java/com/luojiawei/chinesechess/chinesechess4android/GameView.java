@@ -4,18 +4,11 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.ColorFilter;
 import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
-import android.util.Size;
 import android.view.MotionEvent;
 import android.widget.ImageView;
-import android.widget.Toast;
-
-import java.io.InputStream;
 
 /**
  * Created by L1 on 15-08-21.
@@ -36,6 +29,7 @@ public class GameView extends ImageView {
     boolean isFilpped = false;  //是否翻转棋盘
     boolean isAIThinking = false;
     Thread searchThread;
+    int[] currentMap = new int[256];    //保存当前局面，拷贝自ChessboardUtil.currentMap
 
     public GameView(Context context) {
         super(context);
@@ -54,24 +48,25 @@ public class GameView extends ImageView {
         mScreenH = dm.heightPixels;
 
         loadResoure();
-        ChessboardUtil.startup();
+        ChessboardUtil.startup();   //初始化棋盘
+        copyCurrentMap();
         mChessSize = mScreenW / 9;    //横向9个棋位
 
         setImageBitmap(Bitmap.createScaledBitmap(mBmSelectBoxRed, mScreenW, mScreenW / 9 * 10, false));   //可确定布局大小
 
-        searchThread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    isAIThinking = true;
-                    responseMove();
-                    isAIThinking = false;
-                } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-        };
+//        searchThread = new Thread() {
+//            @Override
+//            public void run() {
+//                try {
+//                    isAIThinking = true;
+//                    responseMove();
+//                    isAIThinking = false;
+//                } catch (Exception e) {
+//                    // TODO Auto-generated catch block
+//                    e.printStackTrace();
+//                }
+//            }
+//        };
         LogUtil.i("GameView", "Screen:" + String.valueOf(mScreenH) + " X " + String.valueOf(mScreenW));
         LogUtil.i("GameView", "ChessSize:" + String.valueOf(mChessSize));
     }
@@ -81,8 +76,12 @@ public class GameView extends ImageView {
      */
     public void newGame() {
         LogUtil.i(Tag, "newGame()  " + this.toString());
+        if(isAIThinking){
+            return;
+        }
         ChessboardUtil.startup();
         posFrom = posTo = posFromOpp = posToOpp = -1;
+        copyCurrentMap();
         invalidate();
     }
 
@@ -111,6 +110,16 @@ public class GameView extends ImageView {
         }
     }
 
+    /**
+     * invalidate()并非立即执行onDraw()，复制数组ChessboardUtil.currentMap，
+     * 可防止AI搜索时将ChessboardUtil.currentMap改变，而发生界面绘制错误
+     */
+    private void copyCurrentMap() {
+        for (int i = 0; i < 256; ++i) {
+            currentMap[i] = ChessboardUtil.currentMap[i];
+        }
+    }
+
     @Override
     public void onDraw(Canvas canvas) {
         //绘制棋盘
@@ -118,7 +127,7 @@ public class GameView extends ImageView {
 
         //绘制棋子
         for (int i = 0; i < 256; ++i) {
-            if (ChessboardUtil.currentMap[i] != 0) {
+            if (currentMap[i] != 0) {
                 drawPiece(canvas, i);
             }
         }
@@ -155,8 +164,8 @@ public class GameView extends ImageView {
             screenY = mChessSize * (ChessboardUtil.getCoordY(position) - ChessboardUtil.BOARD_TOP);
         }
 //        LogUtil.i(Tag,"drawPiece Position:"+String.valueOf(position));
-//        LogUtil.i(Tag,"drawPiece Flag:"+String.valueOf(ChessboardUtil.currentMap[position]));
-        switch (ChessboardUtil.currentMap[position]) {
+//        LogUtil.i(Tag,"drawPiece Flag:"+String.valueOf(currentMap[position]));
+        switch (currentMap[position]) {
             case 16:    //帅
                 canvas.drawBitmap(mBmAllChess[7], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
                 break;
@@ -226,7 +235,7 @@ public class GameView extends ImageView {
     public boolean onTouchEvent(MotionEvent event) {
         if (isAIThinking) {
             LogUtil.i(Tag, "AI Thinking...");
-            return super.onTouchEvent(event);
+            return false;
         }
         LogUtil.i(Tag, "Touch:\t(" + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()) + ")--------------------------------" + this.toString());
         int pos = getPosition(event.getX(), event.getY());  //点击的棋盘位置
@@ -247,6 +256,7 @@ public class GameView extends ImageView {
                 posToOpp = -1; //去除上次绘制位置
             }
             isSelectFrom = true;    //标记已选子
+            copyCurrentMap();
             invalidate();   //重绘棋盘
         } else if (isSelectFrom) { // 如果点击的不是自己的子，但有子选中了(一定是自己的子)，那么走这个子
             int mv;
@@ -262,6 +272,7 @@ public class GameView extends ImageView {
                     LogUtil.i(Tag, "mv:\t" + String.valueOf(mv));
                     LogUtil.i(Tag, "Piece:\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
                     isSelectFrom = false;
+                    copyCurrentMap();   //保存当前界面，防止AI搜索时，发生错误绘制棋盘
                     invalidate();   //重绘棋盘
                     if (Rule.isMate()) {  //将死
 //                        Toast.makeText(getContext(), R.string.is_win,Toast.LENGTH_LONG);/
@@ -274,7 +285,15 @@ public class GameView extends ImageView {
 //                            LogUtil.i(Tag, "stop");
 //                        }
 //                        searchThread.start();
-                        responseMove();
+//                        responseMove();
+                        new Thread() {
+                            @Override
+                            public void run() {
+                                isAIThinking = true;
+                                responseMove();
+                                isAIThinking = false;
+                            }
+                        }.start();
                     }
                 } else {  //走棋失败，被将军中
                     LogUtil.i(Tag, "********isCheck*******");
@@ -311,6 +330,7 @@ public class GameView extends ImageView {
             posToOpp = ChessboardUtil.getMoveDst(mv);
         }
         ChessboardUtil.makeMove(mv);
+        copyCurrentMap();
         postInvalidate();   //主线程外重绘棋盘
 //        invalidate();   //重绘棋盘
         if (Rule.isMate()) {
