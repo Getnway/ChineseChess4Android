@@ -204,7 +204,7 @@ public class Rule {
         return ((sqSrc ^ sqDst) & 0x0f) == 0;
     }
     // 生成所有走法
-    static int generateMoves(int mvs[]) {
+    static int generateMoves(Integer[] mvs) {
         int i, j, nGenMoves, nDelta, sqSrc, sqDst;
         int pcSelfSide, pcOppSide, pcSrc, pcDst;
         int[] ucpcSquares;
@@ -511,7 +511,7 @@ public class Rule {
     // 判断是否被杀
     static boolean isMate() {
         int i, nGenMoveNum, pcCaptured;
-        int[] mvs = new int[MAX_GEN_MOVES];
+        Integer[] mvs = new Integer[MAX_GEN_MOVES];
 
         nGenMoveNum = generateMoves(mvs);
         for (i = 0; i < nGenMoveNum; i ++) {

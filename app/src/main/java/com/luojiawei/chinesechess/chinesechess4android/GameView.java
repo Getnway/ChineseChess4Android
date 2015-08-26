@@ -34,6 +34,8 @@ public class GameView extends ImageView {
     Bitmap mBmSelectBoxRed, mBmSelectBoxBlack;   //选择框
     boolean isSelectFrom = false;   //是否已选择棋子起点
     boolean isFilpped = false;  //是否翻转棋盘
+    boolean isAIThinking = false;
+    Thread searchThread;
 
     public GameView(Context context) {
         super(context);
@@ -57,6 +59,19 @@ public class GameView extends ImageView {
 
         setImageBitmap(Bitmap.createScaledBitmap(mBmSelectBoxRed, mScreenW, mScreenW / 9 * 10, false));   //可确定布局大小
 
+        searchThread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    isAIThinking = true;
+                    responseMove();
+                    isAIThinking = false;
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        };
         LogUtil.i("GameView", "Screen:" + String.valueOf(mScreenH) + " X " + String.valueOf(mScreenW));
         LogUtil.i("GameView", "ChessSize:" + String.valueOf(mChessSize));
     }
@@ -209,6 +224,10 @@ public class GameView extends ImageView {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        if (isAIThinking) {
+            LogUtil.i(Tag, "AI Thinking...");
+            return super.onTouchEvent(event);
+        }
         LogUtil.i(Tag, "Touch:\t(" + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()) + ")--------------------------------" + this.toString());
         int pos = getPosition(event.getX(), event.getY());  //点击的棋盘位置
         LogUtil.i(Tag, "Point:\t" + String.valueOf(pos));
@@ -238,18 +257,27 @@ public class GameView extends ImageView {
                 posToOpp = pos;
                 mv = ChessboardUtil.getMove(posFromOpp, posToOpp); //获取走法
             }
-            if(Rule.isLegalMove(mv)){
-                if(ChessboardUtil.makeMove(mv)){    //没被将军，走棋成功
-                    if(Rule.isMate()){
-                        Toast.makeText(getContext(), R.string.is_win,Toast.LENGTH_LONG);
-                        LogUtil.i(Tag,"*********Win*********");
-                    }
+            if (Rule.isLegalMove(mv)) {
+                if (ChessboardUtil.makeMove(mv)) {    //没被将军，走棋成功
                     LogUtil.i(Tag, "mv:\t" + String.valueOf(mv));
                     LogUtil.i(Tag, "Piece:\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
                     isSelectFrom = false;
                     invalidate();   //重绘棋盘
-                }else{
-                    LogUtil.i(Tag,"********isCheck*******");
+                    if (Rule.isMate()) {  //将死
+//                        Toast.makeText(getContext(), R.string.is_win,Toast.LENGTH_LONG);/
+                        LogUtil.i(Tag, "*********Win*********");
+                    } else {
+//                        LogUtil.i(Tag,"State:"+searchThread.getState().toString());
+//                        if (searchThread.isAlive()) {
+//                            LogUtil.i(Tag, "isAlive");
+//                            searchThread.stop();
+//                            LogUtil.i(Tag, "stop");
+//                        }
+//                        searchThread.start();
+                        responseMove();
+                    }
+                } else {  //走棋失败，被将军中
+                    LogUtil.i(Tag, "********isCheck*******");
                 }
             }
         }
@@ -266,6 +294,31 @@ public class GameView extends ImageView {
      */
     private int getPosition(float x, float y) {
         return (int) (y / mChessSize + ChessboardUtil.BOARD_LEFT) * 16 + (int) (x / mChessSize + ChessboardUtil.BOARD_TOP);
+    }
+
+    // 电脑回应一步棋
+    void responseMove() {
+        // 电脑走一步棋
+        Engine.searchMain();
+        int mv = Engine.mvResult;
+        LogUtil.i(Tag, "***AI*** mv:\t" + String.valueOf(mv));
+        LogUtil.i(Tag, "***AI*** Piece:\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
+        if (ChessboardUtil.sdPlayer == 0) {   //红方走棋
+            posFrom = ChessboardUtil.getMoveSrc(mv);
+            posTo = ChessboardUtil.getMoveDst(mv);
+        } else {
+            posFromOpp = ChessboardUtil.getMoveSrc(mv);
+            posToOpp = ChessboardUtil.getMoveDst(mv);
+        }
+        ChessboardUtil.makeMove(mv);
+        postInvalidate();   //主线程外重绘棋盘
+//        invalidate();   //重绘棋盘
+        if (Rule.isMate()) {
+            // 如果分出胜负，那么播放胜负的声音，并且弹出不带声音的提示框
+            LogUtil.i(Tag, "*********AI Win*********");
+        } else {
+            // 如果没有分出胜负，那么播放将军、吃子或一般走子的声音
+        }
     }
 
 }

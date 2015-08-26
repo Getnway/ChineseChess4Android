@@ -15,9 +15,17 @@ public class ChessboardUtil {
 
 
     public static void startup() {            // 初始化棋盘
+        int sq, pc;
         sdPlayer = 0;
-        for (int i = 0; i < 256; i++) {
-            currentMap[i] = startupMap[i];
+        Engine.nDistance = 0;
+        Value.vlBlack = Value.vlWhite = 0;
+        for (sq = 0; sq < 256; sq++) {
+            pc = startupMap[sq];
+            if (pc != 0) {
+                addPiece(sq, pc);
+            } else {
+                currentMap[sq] = 0;
+            }
         }
     }
 
@@ -27,22 +35,36 @@ public class ChessboardUtil {
 
     public static void addPiece(int sq, int pc) { // 在棋盘上放一枚棋子
         currentMap[sq] = pc;
+        // 红方加分，黑方(注意"cucvlPiecePos"取值要颠倒)减分
+        if (pc < 16) {
+            Value.vlWhite += Value.cucvlPiecePos[pc - 8][sq];
+        } else {
+            Value.vlBlack += Value.cucvlPiecePos[pc - 16][centreFlip(sq)];
+        }
     }
 
-    public static void delPiece(int sq) {         // 从棋盘上拿走一枚棋子
+    public static void delPiece(int sq, int pc) {         // 从棋盘上拿走一枚棋子
         currentMap[sq] = 0;
+        // 红方减分，黑方(注意"cucvlPiecePos"取值要颠倒)加分
+        if (pc < 16) {
+            Value.vlWhite -= Value.cucvlPiecePos[pc - 8][sq];
+        } else {
+            Value.vlBlack -= Value.cucvlPiecePos[pc - 16][centreFlip(sq)];
+        }
     }
 
     public static int movePiece(int mv) {         // 搬一步棋的棋子
-        int sqSrc, sqDst, pc, pcDst;
+        int sqSrc, sqDst, pc, pcCaptured;
         sqSrc = getMoveSrc(mv);
         sqDst = getMoveDst(mv);
-        pcDst = currentMap[sqDst];
-        delPiece(sqDst);
+        pcCaptured = currentMap[sqDst];
+        if (pcCaptured != 0) {
+            delPiece(sqDst, pcCaptured);
+        }
         pc = currentMap[sqSrc];
-        delPiece(sqSrc);
+        delPiece(sqSrc, pc);
         addPiece(sqDst, pc);
-        return pcDst;
+        return pcCaptured;
     }
 
     public static void undoMovePiece(int mv, int pcCaptured) {      // 撤消搬一步棋的棋子
@@ -50,36 +72,46 @@ public class ChessboardUtil {
         sqSrc = getMoveSrc(mv);
         sqDst = getMoveDst(mv);
         pc = currentMap[sqDst];
-        delPiece(sqDst);
+        delPiece(sqDst, pc);
         addPiece(sqSrc, pc);
-        addPiece(sqDst, pcCaptured);
+        if (pcCaptured != 0) {
+            addPiece(sqDst, pcCaptured);
+        }
     }
 
     public static boolean makeMove(int mv) {         // 走一步棋
-        int pc = movePiece(mv);
-        if(Rule.isChecked()){
-            undoMovePiece(mv,pc);
+        int pcCaptured = movePiece(mv);
+        if (Rule.isChecked()) {
+            undoMovePiece(mv, pcCaptured);
             return false;
         }
         changeSide();
+        ++Engine.nDistance;
         return true;
     }
+
+    public static void undoMakeMove(int mv, int pcCaptured) { // 撤消走一步棋
+        --Engine.nDistance;
+        changeSide();
+        undoMovePiece(mv, pcCaptured);
+    }
+
 
     //起始棋局
     public static final short[] startupMap = {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0,20,19,18,17,16,17,18,19,20, 0, 0, 0, 0,
+            0, 0, 0, 20, 19, 18, 17, 16, 17, 18, 19, 20, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0,21, 0, 0, 0, 0, 0,21, 0, 0, 0, 0, 0,
-            0, 0, 0,22, 0,22, 0,22, 0,22, 0,22, 0, 0, 0, 0,
+            0, 0, 0, 0, 21, 0, 0, 0, 0, 0, 21, 0, 0, 0, 0, 0,
+            0, 0, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0,14, 0,14, 0,14, 0,14, 0,14, 0, 0, 0, 0,
-            0, 0, 0, 0,13, 0, 0, 0, 0, 0,13, 0, 0, 0, 0, 0,
+            0, 0, 0, 14, 0, 14, 0, 14, 0, 14, 0, 14, 0, 0, 0, 0,
+            0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0,12,11,10, 9, 8, 9,10,11,12, 0, 0, 0, 0,
+            0, 0, 0, 12, 11, 10, 9, 8, 9, 10, 11, 12, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
