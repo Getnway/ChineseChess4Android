@@ -9,6 +9,7 @@ import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 /**
  * Created by L1 on 15-08-21.
@@ -16,17 +17,20 @@ import android.widget.ImageView;
  */
 public class GameView extends ImageView {
     String Tag = "GameView";
-    int RED = 0, BLACK = 1;  //选择框颜色
+    final int RED = 0, BLACK = 1;  //选择框颜色
     int screenX, screenY;   //棋盘对应的屏幕坐标
     int mScreenW, mScreenH; //屏幕宽高
     int mChessSize;  //棋子长宽
+    int mBoardBottom;   //棋盘底边
     int posFrom = -1, posTo = -1;  //棋子起点和终点
     int posFromOpp = -1, posToOpp = -1;  //对方棋子起点和终点
+    String mText = "Text";
     Bitmap mBmChessboard;   //棋盘
     Bitmap[] mBmAllChess = new Bitmap[14]; //棋子
     Bitmap mBmSelectBoxRed, mBmSelectBoxBlack;   //选择框
     boolean isSelectFrom = false;   //是否已选择棋子起点
     boolean isFilpped = false;  //是否翻转棋盘
+    boolean isGameOver = false; //是否游戏结束
     boolean isAIThinking = false;
     Thread searchThread;
     int[] currentMap = new int[256];    //保存当前局面，拷贝自ChessboardUtil.currentMap
@@ -42,6 +46,7 @@ public class GameView extends ImageView {
     }
 
     private void init(Context context) {
+        LogUtil.i(Tag,"init()");
         //获取屏幕高度和宽度
         DisplayMetrics dm = getResources().getDisplayMetrics();
         mScreenW = dm.widthPixels;
@@ -51,8 +56,9 @@ public class GameView extends ImageView {
         ChessboardUtil.startup();   //初始化棋盘
         copyCurrentMap();
         mChessSize = mScreenW / 9;    //横向9个棋位
+        mBoardBottom = mChessSize * 10; //纵向10个棋位，计算出底边
 
-        setImageBitmap(Bitmap.createScaledBitmap(mBmSelectBoxRed, mScreenW, mScreenW / 9 * 10, false));   //可确定布局大小
+        setImageBitmap(Bitmap.createScaledBitmap(mBmSelectBoxRed, mScreenW, mScreenW / 9 * 12, false));   //可确定布局大小
 
 //        searchThread = new Thread() {
 //            @Override
@@ -76,11 +82,13 @@ public class GameView extends ImageView {
      */
     public void newGame() {
         LogUtil.i(Tag, "newGame()  " + this.toString());
-        if(isAIThinking){
+        if (isAIThinking) {
             return;
         }
         ChessboardUtil.startup();
         posFrom = posTo = posFromOpp = posToOpp = -1;
+        isGameOver = false;
+//        ZobristStruct.initZobrist(ChessboardUtil.zobrPlayer,ChessboardUtil.zobrTable);
         copyCurrentMap();
         invalidate();
     }
@@ -146,6 +154,10 @@ public class GameView extends ImageView {
             drawSelectBox(canvas, posToOpp, RED);
         }
 
+        //绘制文本
+//        canvas.drawLine(0, mBoardBottom, 50, mBoardBottom + 50,null);
+//        mText = "haha";
+//        drawText(canvas);
     }
 
     /**
@@ -231,10 +243,28 @@ public class GameView extends ImageView {
         }
     }
 
+    /**
+     * 棋盘底部绘制文本
+     *
+     * @param canvas Canvas对象
+     */
+    private void drawText(Canvas canvas) {
+        canvas.drawText(mText, 0, mBoardBottom, null);
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        int vlRep;
+        if (event.getY() >= mBoardBottom) { //  超过棋盘底部
+            return false;
+        }
+        if(isGameOver){
+            LogUtil.i(Tag, "Is Game Over!!!");
+            return false;
+        }
         if (isAIThinking) {
             LogUtil.i(Tag, "AI Thinking...");
+            Toast.makeText(MyApplication.getContext(), R.string.AI_Thinking_disturb, Toast.LENGTH_LONG);
             return false;
         }
         LogUtil.i(Tag, "Touch:\t(" + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()) + ")--------------------------------" + this.toString());
@@ -243,8 +273,16 @@ public class GameView extends ImageView {
         if (isFilpped) {  //如果翻转了棋盘
             pos = ChessboardUtil.centreFlip(pos);
         }
-        LogUtil.i(Tag, "Piece:\t" + String.valueOf(ChessboardUtil.currentMap[pos]));
+        touchEventOnBoard(pos);
+
+        return super.onTouchEvent(event);
+    }
+
+    //点击在棋盘上的事件
+    private void touchEventOnBoard(int pos) {
+        int vlRep;
         int chessFlag = ChessboardUtil.currentMap[pos]; //点击位置的棋子
+        LogUtil.i(Tag, "Piece:\t" + String.valueOf(chessFlag));
 
         // 如果点击自己的子，那么直接选中该子
         if ((chessFlag & ChessboardUtil.getSideTag(ChessboardUtil.sdPlayer)) != 0) {
@@ -258,7 +296,7 @@ public class GameView extends ImageView {
             isSelectFrom = true;    //标记已选子
             copyCurrentMap();
             invalidate();   //重绘棋盘
-        } else if (isSelectFrom) { // 如果点击的不是自己的子，但有子选中了(一定是自己的子)，那么走这个子
+        } else if (isSelectFrom && !isGameOver) { // 如果点击的不是自己的子，但有子选中了(一定是自己的子)，那么走这个子
             int mv;
             if (ChessboardUtil.sdPlayer == 0) {   //红方走棋
                 posTo = pos;
@@ -272,12 +310,28 @@ public class GameView extends ImageView {
                     LogUtil.i(Tag, "mv:\t" + String.valueOf(mv));
                     LogUtil.i(Tag, "Piece:\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
                     isSelectFrom = false;
+                    // 检查重复局面
+                    vlRep = ChessboardUtil.repStatus(3);
                     copyCurrentMap();   //保存当前界面，防止AI搜索时，发生错误绘制棋盘
                     invalidate();   //重绘棋盘
                     if (Rule.isMate()) {  //将死
 //                        Toast.makeText(getContext(), R.string.is_win,Toast.LENGTH_LONG);/
                         LogUtil.i(Tag, "*********Win*********");
+                        isGameOver = true;
+                    }  else if (vlRep > 0) {
+                        vlRep = ChessboardUtil.repValue(vlRep);
+                        // 注意："vlRep"是对电脑来说的分值
+                        String str = vlRep > Engine.WIN_VALUE ? "长打作负，请不要气馁！" :
+                                vlRep < -Engine.WIN_VALUE ? "电脑长打作负，祝贺你取得胜利！" : "双方不变作和，辛苦了！";
+                        isGameOver = true;
+                    } else if (ChessboardUtil.nHistoryMoveNum > 100) {
+                        String str = "超过自然限着作和，辛苦了！";
+                        isGameOver = true;
                     } else {
+                        // 如果没有分出胜负，那么播放将军、吃子或一般走子的声音
+                        if (ChessboardUtil.captured()) {
+                            ChessboardUtil.setIrrev();
+                        }
 //                        LogUtil.i(Tag,"State:"+searchThread.getState().toString());
 //                        if (searchThread.isAlive()) {
 //                            LogUtil.i(Tag, "isAlive");
@@ -290,7 +344,7 @@ public class GameView extends ImageView {
                             @Override
                             public void run() {
                                 isAIThinking = true;
-                                responseMove();
+                                responseMove(); //电脑回应一步棋
                                 isAIThinking = false;
                             }
                         }.start();
@@ -300,8 +354,6 @@ public class GameView extends ImageView {
                 }
             }
         }
-
-        return super.onTouchEvent(event);
     }
 
     /**
@@ -317,7 +369,8 @@ public class GameView extends ImageView {
 
     // 电脑回应一步棋
     void responseMove() {
-        // 电脑走一步棋
+        int vlRep;
+        // 电脑搜索并走一步棋
         Engine.searchMain();
         int mv = Engine.mvResult;
         LogUtil.i(Tag, "***AI*** mv:\t" + String.valueOf(mv));
@@ -333,11 +386,26 @@ public class GameView extends ImageView {
         copyCurrentMap();
         postInvalidate();   //主线程外重绘棋盘
 //        invalidate();   //重绘棋盘
+        vlRep = ChessboardUtil.repStatus(3);
         if (Rule.isMate()) {
             // 如果分出胜负，那么播放胜负的声音，并且弹出不带声音的提示框
             LogUtil.i(Tag, "*********AI Win*********");
-        } else {
+            isGameOver = true;
+        }else if(vlRep>0){
+            vlRep = ChessboardUtil.repValue(vlRep);
+            // 注意："vlRep"是对玩家来说的分值
+            String str = vlRep < -Engine.WIN_VALUE ? "长打作负，请不要气馁！"
+                    : vlRep > Engine.WIN_VALUE ? "电脑长打作负，祝贺你取得胜利！" : "双方不变作和，辛苦了！";
+            isGameOver = true;
+
+        }else if (ChessboardUtil.nHistoryMoveNum > 100) {
+            String str = "超过自然限着作和，辛苦了！";
+            isGameOver = true;
+        }  else {
             // 如果没有分出胜负，那么播放将军、吃子或一般走子的声音
+            if (ChessboardUtil.captured()) {
+                ChessboardUtil.setIrrev();
+            }
         }
     }
 

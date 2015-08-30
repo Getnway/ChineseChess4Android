@@ -188,7 +188,7 @@ public class Rule {
     static boolean isSameHalf(int sqSrc, int sqDst) {
         return ((sqSrc ^ sqDst) & 0x80) == 0;
     }
-    
+
     // 未过河的兵（卒）获取向前目标点
     static int getForwardSquare(int sq, int sd) {
         return sq - 16 + (sd << 5);
@@ -203,8 +203,9 @@ public class Rule {
     static boolean isSameColumn(int sqSrc, int sqDst) {
         return ((sqSrc ^ sqDst) & 0x0f) == 0;
     }
-    // 生成所有走法
-    static int generateMoves(Integer[] mvs) {
+
+    // 生成所有走法，如果"bCapture"为"TRUE"则只生成吃子走法
+    static int generateMoves(Integer[] mvs, boolean bCapture) {
         int i, j, nGenMoves, nDelta, sqSrc, sqDst;
         int pcSelfSide, pcOppSide, pcSrc, pcDst;
         int[] ucpcSquares;
@@ -216,7 +217,7 @@ public class Rule {
         nGenMoves = 0;
         pcSelfSide = ChessboardUtil.getSideTag(sdPlayer);
         pcOppSide = ChessboardUtil.getOppositeSideTag(sdPlayer);
-        for (sqSrc = 0; sqSrc < 256; sqSrc ++) {
+        for (sqSrc = 0; sqSrc < 256; sqSrc++) {
 
             // 1. 找到一个本方棋子，再做以下判断：
             pcSrc = ucpcSquares[sqSrc];
@@ -227,33 +228,33 @@ public class Rule {
             // 2. 根据棋子确定走法
             switch (pcSrc - pcSelfSide) {
                 case PIECE_KING:
-                    for (i = 0; i < 4; i ++) {
+                    for (i = 0; i < 4; i++) {
                         sqDst = sqSrc + ccKingDelta[i];
                         if (!isInFort(sqDst)) {
                             continue;
                         }
                         pcDst = ucpcSquares[sqDst];
-                        if ((pcDst & pcSelfSide) == 0) {
+                        if (bCapture ? (pcDst & pcSelfSide) != 0 : (pcDst & pcSelfSide) == 0) {
                             mvs[nGenMoves] = ChessboardUtil.getMove(sqSrc, sqDst);
-                            nGenMoves ++;
+                            nGenMoves++;
                         }
                     }
                     break;
                 case PIECE_ADVISOR:
-                    for (i = 0; i < 4; i ++) {
+                    for (i = 0; i < 4; i++) {
                         sqDst = sqSrc + ccAdvisorDelta[i];
                         if (!isInFort(sqDst)) {
                             continue;
                         }
                         pcDst = ucpcSquares[sqDst];
-                        if ((pcDst & pcSelfSide) == 0) {
+                        if (bCapture ? (pcDst & pcOppSide) != 0 : (pcDst & pcSelfSide) == 0) {
                             mvs[nGenMoves] = ChessboardUtil.getMove(sqSrc, sqDst);
-                            nGenMoves ++;
+                            nGenMoves++;
                         }
                     }
                     break;
                 case PIECE_BISHOP:
-                    for (i = 0; i < 4; i ++) {
+                    for (i = 0; i < 4; i++) {
                         sqDst = sqSrc + ccAdvisorDelta[i];
                         //不在本方侧，或有象眼则继续
                         if (!(isInBoard(sqDst) && isInHomeHalf(sqDst, sdPlayer) && ucpcSquares[sqDst] == 0)) {
@@ -261,44 +262,46 @@ public class Rule {
                         }
                         sqDst += ccAdvisorDelta[i];
                         pcDst = ucpcSquares[sqDst];
-                        if ((pcDst & pcSelfSide) == 0) {
+                        if (bCapture ? (pcDst & pcOppSide) != 0 : (pcDst & pcSelfSide) == 0) {
                             mvs[nGenMoves] = ChessboardUtil.getMove(sqSrc, sqDst);
-                            nGenMoves ++;
+                            nGenMoves++;
                         }
                     }
                     break;
                 case PIECE_KNIGHT:
-                    for (i = 0; i < 4; i ++) {
+                    for (i = 0; i < 4; i++) {
                         sqDst = sqSrc + ccKingDelta[i];
                         if (ucpcSquares[sqDst] != 0) {  //上左右下有马脚
                             continue;
                         }
-                        for (j = 0; j < 2; j ++) {
+                        for (j = 0; j < 2; j++) {
                             sqDst = sqSrc + ccKnightDelta[i][j];
                             if (!isInBoard(sqDst)) {
                                 continue;
                             }
                             pcDst = ucpcSquares[sqDst];
-                            if ((pcDst & pcSelfSide) == 0) {
+                            if (bCapture ? (pcDst & pcOppSide) != 0 : (pcDst & pcSelfSide) == 0) {
                                 mvs[nGenMoves] = ChessboardUtil.getMove(sqSrc, sqDst);
-                                nGenMoves ++;
+                                nGenMoves++;
                             }
                         }
                     }
                     break;
                 case PIECE_ROOK:
-                    for (i = 0; i < 4; i ++) {
+                    for (i = 0; i < 4; i++) {
                         nDelta = ccKingDelta[i];
                         sqDst = sqSrc + nDelta;
                         while (isInBoard(sqDst)) {
                             pcDst = ucpcSquares[sqDst];
                             if (pcDst == 0) {
-                                mvs[nGenMoves] = ChessboardUtil.getMove(sqSrc, sqDst);
-                                nGenMoves ++;
+                                if(!bCapture) {
+                                    mvs[nGenMoves] = ChessboardUtil.getMove(sqSrc, sqDst);
+                                    nGenMoves++;
+                                }
                             } else {
                                 if ((pcDst & pcOppSide) != 0) { //对方棋子，可吃
                                     mvs[nGenMoves] = ChessboardUtil.getMove(sqSrc, sqDst);
-                                    nGenMoves ++;
+                                    nGenMoves++;
                                 }
                                 break;
                             }
@@ -307,14 +310,16 @@ public class Rule {
                     }
                     break;
                 case PIECE_CANNON:
-                    for (i = 0; i < 4; i ++) {
+                    for (i = 0; i < 4; i++) {
                         nDelta = ccKingDelta[i];
                         sqDst = sqSrc + nDelta;
                         while (isInBoard(sqDst)) {
                             pcDst = ucpcSquares[sqDst];
                             if (pcDst == 0) {
-                                mvs[nGenMoves] = ChessboardUtil.getMove(sqSrc, sqDst);
-                                nGenMoves ++;
+                                if (!bCapture) {
+                                    mvs[nGenMoves] = ChessboardUtil.getMove(sqSrc, sqDst);
+                                    nGenMoves++;
+                                }
                             } else {
                                 break;  //遇到炮台（有棋子阻挡）
                             }
@@ -327,7 +332,7 @@ public class Rule {
                             if (pcDst != 0) {
                                 if ((pcDst & pcOppSide) != 0) { //对方棋子
                                     mvs[nGenMoves] = ChessboardUtil.getMove(sqSrc, sqDst);
-                                    nGenMoves ++;
+                                    nGenMoves++;
                                 }
                                 break;
                             }
@@ -339,9 +344,9 @@ public class Rule {
                     sqDst = getForwardSquare(sqSrc, sdPlayer);  //获取向前走目标点
                     if (isInBoard(sqDst)) {
                         pcDst = ucpcSquares[sqDst];
-                        if ((pcDst & pcSelfSide) == 0) {
+                        if (bCapture ? (pcDst & pcOppSide) != 0 : (pcDst & pcSelfSide) == 0) {
                             mvs[nGenMoves] = ChessboardUtil.getMove(sqSrc, sqDst);
-                            nGenMoves ++;
+                            nGenMoves++;
                         }
                     }
                     if (isInAwayHalf(sqSrc, sdPlayer)) {    //兵（卒）过河，增加左右走法
@@ -349,9 +354,9 @@ public class Rule {
                             sqDst = sqSrc + nDelta;
                             if (isInBoard(sqDst)) {
                                 pcDst = ucpcSquares[sqDst];
-                                if ((pcDst & pcSelfSide) == 0) {
+                                if (bCapture ? (pcDst & pcOppSide) != 0 : (pcDst & pcSelfSide) == 0) {
                                     mvs[nGenMoves] = ChessboardUtil.getMove(sqSrc, sqDst);
-                                    nGenMoves ++;
+                                    nGenMoves++;
                                 }
                             }
                         }
@@ -368,11 +373,11 @@ public class Rule {
         int pcSelfSide, pcSrc, pcDst, nDelta;
         int[] ucpcSquares;
         int sdPlayer;
-        
+
         // 判断走法是否合法，需要经过以下的判断过程：
         ucpcSquares = ChessboardUtil.currentMap;
         sdPlayer = ChessboardUtil.sdPlayer;
-        
+
         // 1. 判断起始格是否有自己的棋子
         sqSrc = ChessboardUtil.getMoveSrc(mv);
         pcSrc = ucpcSquares[sqSrc];
@@ -443,13 +448,13 @@ public class Rule {
 
         ucpcSquares = ChessboardUtil.currentMap;
         sdPlayer = ChessboardUtil.sdPlayer;
-        
-        
+
+
         pcSelfSide = ChessboardUtil.getSideTag(sdPlayer);
         pcOppSide = ChessboardUtil.getOppositeSideTag(sdPlayer);
         // 找到棋盘上的帅(将)，再做以下判断：
 
-        for (sqSrc = 0; sqSrc < 256; sqSrc ++) {
+        for (sqSrc = 0; sqSrc < 256; sqSrc++) {
             if (ucpcSquares[sqSrc] != pcSelfSide + PIECE_KING) {
                 continue;
             }
@@ -465,11 +470,11 @@ public class Rule {
             }
 
             // 2. 判断是否被对方的马将军(以仕(士)的步长当作马腿)
-            for (i = 0; i < 4; i ++) {
+            for (i = 0; i < 4; i++) {
                 if (ucpcSquares[sqSrc + ccAdvisorDelta[i]] != 0) {
                     continue;
                 }
-                for (j = 0; j < 2; j ++) {
+                for (j = 0; j < 2; j++) {
                     pcDst = ucpcSquares[sqSrc + ccKnightCheckDelta[i][j]];
                     if (pcDst == pcOppSide + PIECE_KNIGHT) {
                         return true;
@@ -478,7 +483,7 @@ public class Rule {
             }
 
             // 3. 判断是否被对方的车或炮将军(包括将帅对脸)
-            for (i = 0; i < 4; i ++) {
+            for (i = 0; i < 4; i++) {
                 nDelta = ccKingDelta[i];
                 sqDst = sqSrc + nDelta;
                 while (isInBoard(sqDst)) {
@@ -513,8 +518,8 @@ public class Rule {
         int i, nGenMoveNum, pcCaptured;
         Integer[] mvs = new Integer[MAX_GEN_MOVES];
 
-        nGenMoveNum = generateMoves(mvs);
-        for (i = 0; i < nGenMoveNum; i ++) {
+        nGenMoveNum = generateMoves(mvs, false);
+        for (i = 0; i < nGenMoveNum; i++) {
             pcCaptured = ChessboardUtil.movePiece(mvs[i]);
             if (!isChecked()) {
                 ChessboardUtil.undoMovePiece(mvs[i], pcCaptured);

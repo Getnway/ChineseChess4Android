@@ -73,4 +73,5 @@ public class GameActivity extends Activity implements View.OnClickListener {
                 break;
         }
     }
+
 }
