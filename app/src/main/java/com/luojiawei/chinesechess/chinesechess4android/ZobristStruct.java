@@ -5,7 +5,7 @@ package com.luojiawei.chinesechess.chinesechess4android;
  * Zobrist结构
  */
 public class ZobristStruct {
-    long key, lock0, lock1;
+    int key, lock0, lock1;
 
     static void initZobrist(ZobristStruct player, ZobristStruct[][] table) {
         LogUtil.i("ZobristStruct","initZobrist()");
@@ -74,7 +74,7 @@ public class ZobristStruct {
             return s[(s[x] + s[y]) & 255];
         }
 
-        long nextLong() { // 生成密码流的下四个字节
+        int nextLong() { // 生成密码流的下四个字节
             int uc0, uc1, uc2, uc3;
             uc0 = next();
             uc1 = next();

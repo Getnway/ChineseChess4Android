@@ -120,7 +120,7 @@ public class ChessboardUtil {
     }
 
     public static boolean makeMove(int mv) {         // 走一步棋
-        long key = zobr.key;
+        int key = zobr.key;
         int pcCaptured = movePiece(mv);
         if (Rule.isChecked()) {
             undoMovePiece(mv, pcCaptured);
@@ -188,14 +188,21 @@ public class ChessboardUtil {
         return 0;
     }
 
-    static int repValue(int nRepStatus) {        // 重复局面分值
+    // 重复局面分值
+    static int repValue(int nRepStatus) {
         int vlReturn;
         vlReturn = ((nRepStatus & 2) == 0 ? 0 : Engine.nDistance - Engine.MATE_VALUE) + //我方：没将军or将军
                 ((nRepStatus & 4) == 0 ? 0 : Engine.MATE_VALUE - Engine.nDistance); //对方：没将军or将军
-        return vlReturn == 0 ? -DRAW_VALUE : vlReturn;  //双方：都没将军or有将军
+        return vlReturn == 0 ? drawValue() : vlReturn;  //双方：都没将军or有将军
     }
 
-    static boolean nullOkay() {                 // 判断是否允许空步裁剪
+    // 和棋分值
+    static int drawValue() {
+        return (Engine.nDistance & 1) == 0 ? -DRAW_VALUE : DRAW_VALUE;
+    }
+
+    // 判断是否允许空步裁剪
+    static boolean nullOkay() {
         return (sdPlayer == 0 ? Value.vlWhite : Value.vlBlack) > NULL_MARGIN;
     }
 
