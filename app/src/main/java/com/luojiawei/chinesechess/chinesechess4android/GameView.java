@@ -233,7 +233,7 @@ public class GameView extends ImageView {
         if (isFilpped) {  //如果翻转了棋盘
             position = ChessboardUtil.centreFlip(position);
         }
-        LogUtil.i(Tag, "SelectBox:\t" + String.valueOf(ChessboardUtil.getMoveSrc(position)));
+//        LogUtil.i(Tag, "SelectBox:\t" + String.valueOf(ChessboardUtil.getMoveSrc(position)));
         screenX = mChessSize * (ChessboardUtil.getCoordX(position) - ChessboardUtil.BOARD_LEFT);
         screenY = mChessSize * (ChessboardUtil.getCoordY(position) - ChessboardUtil.BOARD_TOP);
         if (color == RED) {   //轮到红色走棋，即上一步为黑色走棋，绘制红色选择框
@@ -267,9 +267,9 @@ public class GameView extends ImageView {
             Toast.makeText(MyApplication.getContext(), R.string.AI_Thinking_disturb, Toast.LENGTH_LONG);
             return false;
         }
-        LogUtil.i(Tag, "Touch:\t(" + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()) + ")--------------------------------" + this.toString());
+//        LogUtil.i(Tag, "Touch:\t(" + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()) + ")--------------------------------" + this.toString());
         int pos = getPosition(event.getX(), event.getY());  //点击的棋盘位置
-        LogUtil.i(Tag, "Point:\t" + String.valueOf(pos));
+//        LogUtil.i(Tag, "Point:\t" + String.valueOf(pos));
         if (isFilpped) {  //如果翻转了棋盘
             pos = ChessboardUtil.centreFlip(pos);
         }
@@ -282,7 +282,7 @@ public class GameView extends ImageView {
     private void touchEventOnBoard(int pos) {
         int vlRep;
         int chessFlag = ChessboardUtil.currentMap[pos]; //点击位置的棋子
-        LogUtil.i(Tag, "Piece:\t" + String.valueOf(chessFlag));
+//        LogUtil.i(Tag, "Piece:\t" + String.valueOf(chessFlag));
 
         // 如果点击自己的子，那么直接选中该子
         if ((chessFlag & ChessboardUtil.getSideTag(ChessboardUtil.sdPlayer)) != 0) {
@@ -306,9 +306,10 @@ public class GameView extends ImageView {
                 mv = ChessboardUtil.getMove(posFromOpp, posToOpp); //获取走法
             }
             if (Rule.isLegalMove(mv)) {
+                LogUtil.i(Tag, ChessboardUtil.getMoveString(mv));
                 if (ChessboardUtil.makeMove(mv)) {    //没被将军，走棋成功
-                    LogUtil.i(Tag, "mv:\t" + String.valueOf(mv));
-                    LogUtil.i(Tag, "Piece:\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
+//                    LogUtil.i(Tag, "mv:\t" + String.valueOf(mv));
+//                    LogUtil.i(Tag, "Piece:\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
                     isSelectFrom = false;
                     // 检查重复局面
                     vlRep = ChessboardUtil.repStatus(3);
@@ -373,8 +374,9 @@ public class GameView extends ImageView {
         // 电脑搜索并走一步棋
         Engine.searchMain();
         int mv = Engine.mvResult;
-        LogUtil.i(Tag, "***AI*** mv:\t" + String.valueOf(mv));
-        LogUtil.i(Tag, "***AI*** Piece:\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
+//        LogUtil.i(Tag, "***AI*** mv:\t" + String.valueOf(mv));
+//        LogUtil.i(Tag, "***AI*** Piece:\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
+        LogUtil.i(Tag, ChessboardUtil.getMoveString(mv));
         if (ChessboardUtil.sdPlayer == 0) {   //红方走棋
             posFrom = ChessboardUtil.getMoveSrc(mv);
             posTo = ChessboardUtil.getMoveDst(mv);
