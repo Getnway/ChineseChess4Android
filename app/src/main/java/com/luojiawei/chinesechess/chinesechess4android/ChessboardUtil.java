@@ -1,5 +1,7 @@
 package com.luojiawei.chinesechess.chinesechess4android;
 
+import android.util.Log;
+
 /**
  * Created by L1 on 15-08-23.
  */
@@ -25,6 +27,9 @@ public class ChessboardUtil {
     static ZobristStruct zobr = new ZobristStruct();
     static MoveStruct[] mvsList = new MoveStruct[MAX_MOVES];
 
+    static String[] chessName = {"帅", "仕", "相", "马", "车", "砲", "兵", "将", "士", "象", "马", "车", "炮", "卒"};
+    static String[] coor = { "九", "八", "七", "六", "五", "四", "三", "二", "一", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+
     static {
         for (int i = 0; i < 14; i++) {
             for (int j = 0; j < 256; j++) {
@@ -34,7 +39,15 @@ public class ChessboardUtil {
         for(int i=0;i<MAX_MOVES;i++){
             mvsList[i] = new MoveStruct();
         }
-        ZobristStruct.initZobrist(zobrPlayer,zobrTable);
+        LogUtil.i("ZobristStruct", zobrTable.toString());
+        ZobristStruct.initZobrist(zobrPlayer, zobrTable);
+
+//        LogUtil.i("Engine", "new hashTable");
+//        for (int i = 0; i < Engine.HASH_SIZE; i++){
+//            Engine.hashTable[i] = new HashItem();
+//        }
+//        LogUtil.i("Engine", "end new hashTable");
+
     }
 
 
@@ -64,13 +77,62 @@ public class ChessboardUtil {
         nHistoryMoveNum = 1;
     }
 
+    public static String getMoveString(int mv){
+        if(!Rule.isLegalMove(mv)){
+            return "\t unLegalMove";
+        }
+        int chess, from, to;
+        int fromX, fromY, toX, toY;
+        from = getMoveSrc(mv);
+        to = getMoveDst(mv);
+        chess = currentMap[from];
+        fromX = from % 16 - 3;
+        fromY = from / 16 - 3;
+        toX = to % 16 - 3;
+        toY = to / 16 -3;
+        StringBuffer sb = new StringBuffer();
+        sb.append("\t ");
+        sb.append(chessName[chess - 8]);
+        if(chess > 15){
+            sb.append(coor[fromX]);
+            if(fromY > toY){
+                sb.append("进");
+            }else if(fromY == toY){
+                sb.append("平");
+            }else{
+                sb.append("退");
+            }
+            sb.append(coor[toX]);
+        }else{  //chess <= 15
+            sb.append(coor[fromX + 9]);
+            if(fromY < toY){
+                sb.append("进");
+            }else if(fromY == toY){
+                sb.append("平");
+            }else{
+                sb.append("退");
+            }
+            sb.append(coor[toX + 9]);
+        }
+        return sb.toString();
+    }
+
     public static void changeSide() {         // 交换走子方
         sdPlayer = 1 - sdPlayer;
+//        LogUtil.i(TAG, "changeSide key: " + String.valueOf(zobr.key) +
+//                "\tlock0: " + String.valueOf(zobr.lock0) +
+//                "\tlock1: " + String.valueOf(zobr.lock1));
         zobr.xor(zobrPlayer);
+//        LogUtil.i(TAG, "after changeSide key: " + String.valueOf(zobr.key) +
+//                "\tlock0: " + String.valueOf(zobr.lock0) +
+//                "\tlock1: " + String.valueOf(zobr.lock1));
     }
 
     public static void addPiece(int sq, int pc) { // 在棋盘上放一枚棋子
         currentMap[sq] = pc;
+//        LogUtil.i(TAG, "addPiece key: " + String.valueOf(zobr.key) +
+//                "\tlock0: " + String.valueOf(zobr.lock0) +
+//                "\tlock1: " + String.valueOf(zobr.lock1));
         // 红方加分，黑方(注意"cucvlPiecePos"取值要颠倒)减分，因为子力表只有一个方向的位置子力
         if (pc < 16) {
             Value.vlWhite += Value.cucvlPiecePos[pc - 8][sq];
@@ -79,10 +141,17 @@ public class ChessboardUtil {
             Value.vlBlack += Value.cucvlPiecePos[pc - 16][centreFlip(sq)];
             zobr.xor(zobrTable[pc - 9][sq]);
         }
+//        LogUtil.i(TAG, "after addPiece key: " + String.valueOf(zobr.key) +
+//                "\tlock0: " + String.valueOf(zobr.lock0) +
+//                "\tlock1: " + String.valueOf(zobr.lock1));
     }
 
     public static void delPiece(int sq, int pc) {         // 从棋盘上拿走一枚棋子
         currentMap[sq] = 0;
+//        LogUtil.i(TAG, "after delPiece key: " + String.valueOf(zobr.key) +
+//                "\tlock0: " + String.valueOf(zobr.lock0) +
+//                "\tlock1: " + String.valueOf(zobr.lock1));
+//        LogUtil.i("TAG", "sq: " + String.valueOf(sq) + " pc:" + String.valueOf(pc));
         // 红方减分，黑方(注意"cucvlPiecePos"取值要颠倒)加分，因为子力表只有一个方向的位置子力
         if (pc < 16) {
             Value.vlWhite -= Value.cucvlPiecePos[pc - 8][sq];
@@ -91,6 +160,9 @@ public class ChessboardUtil {
             Value.vlBlack -= Value.cucvlPiecePos[pc - 16][centreFlip(sq)];
             zobr.xor(zobrTable[pc - 9][sq]);
         }
+//        LogUtil.i(TAG, "after delPiece key: " + String.valueOf(zobr.key) +
+//                "\tlock0: " + String.valueOf(zobr.lock0) +
+//                "\tlock1: " + String.valueOf(zobr.lock1));
     }
 
     public static int movePiece(int mv) {         // 搬一步棋的棋子
