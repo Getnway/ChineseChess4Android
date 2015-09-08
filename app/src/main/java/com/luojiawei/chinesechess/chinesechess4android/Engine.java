@@ -10,17 +10,18 @@ import java.util.Comparator;
 public class Engine {
     static String TAG = "Engine";
     final static int MATE_VALUE = 10000;  // 最高分值，即将死的分值
-    final static int WIN_VALUE = MATE_VALUE - 100; // 搜索出胜负的分值界限，超出此值就说明已经搜索出杀棋了
+    final static int BAN_VALUE = MATE_VALUE - 100; // 长将判负的分值，低于该值将不写入置换表
+    final static int WIN_VALUE = MATE_VALUE - 200; // 搜索出胜负的分值界限，超出此值就说明已经搜索出杀棋了
     static int LIMIT_DEPTH = 64;    // 最大的搜索深度
     static long CLOCKS_PER_SEC = 1000;   //单位（ms）
     static int mvResult;             // 电脑搜索到的最好走法
     static int[] nHistoryTable = new int[65536]; // 历史表
     static int nDistance;                  // 距离根节点的步数
     static CompareHistory compareHistory = new CompareHistory();
-    final static boolean NO_NULL = true;   // "SearchFull"的参数
-    static boolean GEN_CAPTURE = true;  // "GenerateMoves"参数
+    final static boolean NO_NULL = true;   // "SearchFull"的参数，是否空步裁剪
+    static boolean GEN_CAPTURE = true;  // "GenerateMoves"参数，是否只生成吃子走法
     final static int NULL_DEPTH = 2;      // 空步裁剪的裁剪深度 2或3
-    final static int HASH_SIZE = 1 << 20; // 置换表大小
+    final static int HASH_SIZE = 1 << 18; // 置换表大小
     final static int HASH_ALPHA = 1;      // ALPHA节点的置换表项
     final static int HASH_BETA = 2;       // BETA节点的置换表项
     final static int HASH_PV = 3;         // PV节点的置换表项
@@ -37,9 +38,11 @@ public class Engine {
     static Integer[] mvs = new Integer[Rule.MAX_GEN_MOVES];           // 所有的走法
 
     static {
+        LogUtil.i(TAG, "new hashTable");
         for (int i = 0; i < HASH_SIZE; i++){
             hashTable[i] = new HashItem();
         }
+        LogUtil.i(TAG, "end new hashTable");
     }
 
     /**     -----------------------------初始化操作-----------------------------     */
@@ -85,6 +88,11 @@ public class Engine {
             case PHASE_HASH:
                 nPhase = PHASE_KILLER_1;
                 if (mvHash != 0) {
+                    LogUtil.i(TAG, "from PHASE_HASH" +
+//                            "\t mv:" + String.valueOf(mvHash) +
+//                            "\t From " + String.valueOf(ChessboardUtil.getMoveSrc(mvHash)) +
+//                            " To " + String.valueOf(ChessboardUtil.getMoveDst(mvHash)) +
+                            ChessboardUtil.getMoveString(mvHash));
                     return mvHash;
                 }
                 // 技巧：这里没有"break"，表示"switch"的上一个"case"执行完后紧接着做下一个"case"，下同
@@ -93,6 +101,11 @@ public class Engine {
             case PHASE_KILLER_1:
                 nPhase = PHASE_KILLER_2;
                 if (mvKiller1 != mvHash && mvKiller1 != 0 && Rule.isLegalMove(mvKiller1)) {
+                    LogUtil.i(TAG, "from PHASE_KILLER_1" +
+//                            "\t mv:" + String.valueOf(mvKiller1) +
+//                            "\t From " + String.valueOf(ChessboardUtil.getMoveSrc(mvKiller1)) +
+//                            " To " + String.valueOf(ChessboardUtil.getMoveDst(mvKiller1)) +
+                            ChessboardUtil.getMoveString(mvKiller1));
                     return mvKiller1;
                 }
 
@@ -100,6 +113,11 @@ public class Engine {
             case PHASE_KILLER_2:
                 nPhase = PHASE_GEN_MOVES;
                 if (mvKiller2 != mvHash && mvKiller2 != 0 && Rule.isLegalMove(mvKiller2)) {
+                    LogUtil.i(TAG, "from PHASE_KILLER_2" +
+//                            "\t mv:" + String.valueOf(mvKiller2) +
+//                            "\t From " + String.valueOf(ChessboardUtil.getMoveSrc(mvKiller2)) +
+//                            " To " + String.valueOf(ChessboardUtil.getMoveDst(mvKiller2)) +
+                            ChessboardUtil.getMoveString(mvKiller2));
                     return mvKiller2;
                 }
 
@@ -116,6 +134,11 @@ public class Engine {
                     mv = mvs[nIndex];
                     nIndex ++;
                     if (mv != mvHash && mv != mvKiller1 && mv != mvKiller2) {
+                        LogUtil.i(TAG, "from PHASE_REST" +
+//                                "\t mv:" + String.valueOf(mv) +
+//                                "\t From " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) +
+//                                " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)) +
+                                ChessboardUtil.getMoveString(mv));
                         return mv;
                     }
                 }
@@ -130,22 +153,43 @@ public class Engine {
     /**     -----------------------------提取和记录Hash-----------------------------     */
     // 提取置换表项
     static int[] probeHash(int vlAlpha, int vlBeta, int nDepth, ZobristStruct zobr) {
+        int pos = zobr.key & (HASH_SIZE - 1);
         boolean bMate; // 杀棋标志：如果是杀棋，那么不需要满足深度条件
-        HashItem hsh;
+        HashItem hsh = hashTable[pos];
         int[] mvAndValue = new int[2];  //走法和分值
 
-        hsh = hashTable[zobr.key & (HASH_SIZE - 1)];
+//        LogUtil.i("ZobristStruct"," get: " + String.valueOf(ChessboardUtil.zobr.lock0));
         if (hsh.lock0 != zobr.lock0 || hsh.lock1 != zobr.lock1) {
+//            LogUtil.i("Hash"," diff in pos: " + String.valueOf(pos) +
+//                    "\tkey:" + String.valueOf(zobr.key) +
+//                    "\tlock0: " + String.valueOf(zobr.lock0) +
+//                    "\tlock1: " + String.valueOf(zobr.lock1) +
+//                    "\thsh.lock0: " + String.valueOf(hsh.lock0) +
+//                    "\thsh.lock1: " + String.valueOf(hsh.lock1));
             mvAndValue[0] = 0;
             mvAndValue[1] = -MATE_VALUE;
             return mvAndValue;
         }
+        LogUtil.i("Hash"," -------get : " + String.valueOf(pos) +
+//                "\tkey:" + String.valueOf(zobr.key) +
+//                "\tlock0: " + String.valueOf(zobr.lock0) +
+//                "\tlock1: " + String.valueOf(zobr.lock1) +
+                "\t hsh.lock0: " + String.valueOf(hsh.lock0) +
+                "\t hsh.lock1: " + String.valueOf(hsh.lock1));
         mvAndValue[0] = hsh.mv;
         bMate = false;
         if (hsh.vl > WIN_VALUE) {
+//            if (hsh.vl < BAN_VALUE) {
+//                mvAndValue[1] = -MATE_VALUE;
+//                return mvAndValue; // 可能导致搜索的不稳定性，立刻退出，但最佳着法可能拿到
+//            }
             hsh.vl -= nDistance;
             bMate = true;
         } else if (hsh.vl < -WIN_VALUE) {
+//            if (hsh.vl < -BAN_VALUE) {
+//                mvAndValue[1] = -MATE_VALUE;
+//                return mvAndValue; // 可能导致搜索的不稳定性，立刻退出，但最佳着法可能拿到
+//            }
             hsh.vl += nDistance;
             bMate = true;
         }
@@ -166,16 +210,22 @@ public class Engine {
 
     // 保存置换表项
     static void recordHash(int nFlag, int vl, int nDepth, int mv, ZobristStruct zobr) {
-        HashItem hsh;
-        hsh = hashTable[zobr.key & (HASH_SIZE - 1)];
+        int pos = zobr.key & (HASH_SIZE - 1);
+        HashItem hsh = hashTable[pos];
         if (hsh.ucDepth > nDepth) {
             return;
         }
         hsh.ucFlag = nFlag;
         hsh.ucDepth = nDepth;
         if (vl > WIN_VALUE) {
+//            if (mv == 0 && vl <= BAN_VALUE) {
+//                return; // 可能导致搜索的不稳定性，并且没有最佳着法，立刻退出
+//            }
             hsh.vl = vl + nDistance;
         } else if (vl < -WIN_VALUE) {
+//            if (mv == 0 && vl >= -BAN_VALUE) {
+//                return; // 可能导致搜索的不稳定性，并且没有最佳着法，立刻退出
+//            }
             hsh.vl = vl - nDistance;
         } else {
             hsh.vl = vl;
@@ -183,7 +233,22 @@ public class Engine {
         hsh.mv = mv;
         hsh.lock0 = zobr.lock0;
         hsh.lock1 = zobr.lock1;
-        hashTable[zobr.key & (HASH_SIZE - 1)] = hsh;
+//        LogUtil.i("Hash","recordHash before:" + hashTable[pos].lock0 + "\t" + String.valueOf(hsh.lock0));
+        hashTable[pos] = hsh;
+//        LogUtil.i("Hash","recordHash after:" + hashTable[pos].lock0);
+        LogUtil.i("Hash","recordHash : " + String.valueOf(pos) +
+//                "\tkey:" + String.valueOf(zobr.key) +
+//                "\tlock0: " + String.valueOf(zobr.lock0) +
+//                "\tlock1: " + String.valueOf(zobr.lock1) +
+                "\t hsh.lock0: " + String.valueOf(hashTable[pos].lock0) +
+                "\t hsh.lock1: " + String.valueOf(hashTable[pos].lock1) +
+                "\tvl: " + String.valueOf(hashTable[pos].vl) +
+                "\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) +
+                " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
+//        for (int i = 0; i < 10; i++) {
+//            LogUtil.i("Hash", String.valueOf(hashTable[i].mv) + " " + String.valueOf(hashTable[i].lock0) + " " + String.valueOf(hashTable[i].lock1)+
+//                    " " + String.valueOf(hashTable[i].ucDepth)+ " " + String.valueOf(hashTable[i].ucFlag));
+//        }
     }
     /**     -----------------------------end 提取和记录Hash-----------------------------     */
 
@@ -198,7 +263,8 @@ public class Engine {
 
     // 求MVV/LVA值(“被吃子价值-攻击子价值”)
     static int MvvLva(int mv) {
-        return (cucMvvLva[ChessboardUtil.currentMap[ChessboardUtil.getMoveDst(mv)]] << 3) - cucMvvLva[ChessboardUtil.currentMap[ChessboardUtil.getMoveSrc(mv)]];
+        return (cucMvvLva[ChessboardUtil.currentMap[ChessboardUtil.getMoveDst(mv)]] << 3)
+                - cucMvvLva[ChessboardUtil.currentMap[ChessboardUtil.getMoveSrc(mv)]];
     }
     /**     -----------------------------end MVV/LVA-----------------------------     */
 
@@ -208,7 +274,7 @@ public class Engine {
      * 迭代加深搜索过程
      */
     static void searchMain() {
-        LogUtil.i(TAG, "searchMain");
+        LogUtil.i(TAG, "searchMain zobr.lock0=" + String.valueOf(ChessboardUtil.zobr.lock0));
         int i, vl;
         long t;
 
@@ -240,7 +306,7 @@ public class Engine {
                 break;
             }
         }
-        LogUtil.i(TAG, "end search");
+        LogUtil.i(TAG, "end search zobr.lock0=" + String.valueOf(ChessboardUtil.zobr.lock0));
     }
 
     /**
@@ -277,10 +343,19 @@ public class Engine {
             }
 
             // 1-3. 尝试置换表裁剪，并得到置换表走法
+//            LogUtil.i("ZobristStruct"," in: " + String.valueOf(ChessboardUtil.zobr.lock0));
             mvAndValue = probeHash(vlAlpha, vlBeta, nDepth, ChessboardUtil.zobr);
+//            LogUtil.i("Hash","------getHash: " + String.valueOf(ChessboardUtil.zobr.key & (HASH_SIZE - 1)) +
+//                    "\tvl: " + String.valueOf(mvAndValue[1]) +
+//                    "\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mvAndValue[0])) +
+//                    " To " + String.valueOf(ChessboardUtil.getMoveDst(mvAndValue[0])));
             mvHash = mvAndValue[0];
             vl = mvAndValue[1];
             if (vl > -MATE_VALUE) {
+//                LogUtil.i("Hash","********getHash: " + String.valueOf(ChessboardUtil.zobr.key & (HASH_SIZE - 1)) +
+//                        "\tvl: " + String.valueOf(mvAndValue[1]) +
+//                        "\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mvAndValue[0])) +
+//                        " To " + String.valueOf(ChessboardUtil.getMoveDst(mvAndValue[0])));
                 return vl;
             }
 
@@ -299,7 +374,12 @@ public class Engine {
             mvHash = 0;
         }
 
+//        LogUtil.i("Hash", "mvHash:" + String.valueOf(mvHash) +
+//                "\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mvHash)) +
+//                " To " + String.valueOf(ChessboardUtil.getMoveDst(mvHash)));
+
         // 2. 初始化最佳值和最佳走法
+        nHashFlag = HASH_ALPHA;
         vlBest = -MATE_VALUE; // 这样可以知道，是否一个走法都没走过(杀棋)
         mvBest = 0;           // 这样可以知道，是否搜索到了Beta走法或PV走法，以便保存到历史表
 
@@ -316,6 +396,13 @@ public class Engine {
 //        for (i = 0; i < nGenMoves; i++) {
 //            if (ChessboardUtil.makeMove(mvs[i])) {
         while ((mv = nextMove()) !=0 ){
+//            LogUtil.i("Hash", "nextMove:" + String.valueOf(mv) +
+//                    "\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) +
+//                    " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
+            if(!Rule.isLegalMove(mv)){
+                LogUtil.i(TAG, "unLegalMove");
+                continue;
+            }
             if(ChessboardUtil.makeMove(mv)){
                 // 将军延伸（被将军时多搜索一层）
                 vl = -SearchFull(-vlBeta, -vlAlpha, ChessboardUtil.inCheck() ? nDepth : nDepth - 1, false);
