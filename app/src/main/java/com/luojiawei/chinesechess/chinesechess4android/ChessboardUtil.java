@@ -27,8 +27,13 @@ public class ChessboardUtil {
     static ZobristStruct zobr = new ZobristStruct();
     static MoveStruct[] mvsList = new MoveStruct[MAX_MOVES];
 
-    static String[] chessName = {"帅", "仕", "相", "马", "车", "砲", "兵", "将", "士", "象", "马", "车", "炮", "卒"};
-    static String[] coor = { "九", "八", "七", "六", "五", "四", "三", "二", "一", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+//    static String[] chessName = {"帅", "仕", "相", "马", "车", "砲", "兵", "15", "将", "士", "象", "马", "车", "炮", "卒"};
+    static String[] chessName = {" r_shuai ", " r_shi ", " r_xiang ", " r_ma ", " r_ju ", " r_pao ", " r_bing ", " 15 ",
+                                 " b_jiang ", " b_shi ", " b_xiang ", " b_ma ", " b_ju ", " b_pao ", " b_zu "};
+//    static String[] coor = { "九", "八", "七", "六", "五", "四", "三", "二", "一", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+    static String[] coor = { "9", "8", "7", "6", "5", "4", "3", "2", "1", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+//    static String[] orientation = {"进", "平", "退"};
+    static String[] orientation = {" jin ", " ping ", " tui "};
 
     static {
         for (int i = 0; i < 14; i++) {
@@ -95,24 +100,44 @@ public class ChessboardUtil {
         sb.append(chessName[chess - 8]);
         if(chess > 15){
             sb.append(coor[fromX]);
-            if(fromY > toY){
-                sb.append("进");
-            }else if(fromY == toY){
-                sb.append("平");
-            }else{
-                sb.append("退");
+            if(fromX == toX){
+                if (fromY < toY) {//进
+                    sb.append(orientation[0]);
+                    sb.append(toY - fromY);
+                } else {//退
+                    sb.append(orientation[2]);
+                    sb.append(fromY - toY);
+                }
+            }else {
+                if (fromY < toY) {//进
+                    sb.append(orientation[0]);
+                } else if (fromY == toY) {//平
+                    sb.append(orientation[1]);
+                } else {//退
+                    sb.append(orientation[2]);
+                }
+                sb.append(coor[toX]);
             }
-            sb.append(coor[toX]);
         }else{  //chess <= 15
             sb.append(coor[fromX + 9]);
-            if(fromY < toY){
-                sb.append("进");
-            }else if(fromY == toY){
-                sb.append("平");
-            }else{
-                sb.append("退");
+            if(fromX == toX){
+                if (fromY > toY) {//进
+                    sb.append(orientation[0]);
+                    sb.append(fromY - toY);
+                } else {//退
+                    sb.append(orientation[2]);
+                    sb.append(toY - fromY);
+                }
+            }else {
+                if (fromY > toY) {//进
+                    sb.append(orientation[0]);
+                } else if (fromY == toY) {//平
+                    sb.append(orientation[1]);
+                } else {//退
+                    sb.append(orientation[2]);
+                }
+                sb.append(coor[toX + 9]);
             }
-            sb.append(coor[toX + 9]);
         }
         return sb.toString();
     }
