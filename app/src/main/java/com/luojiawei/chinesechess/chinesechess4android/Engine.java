@@ -12,6 +12,7 @@ import java.util.Comparator;
 public class Engine {
     static String TAG = "Engine";
     static int phase;
+    static int[] tmpMap = new int[256];
     final static int MATE_VALUE = 10000;  // 最高分值，即将死的分值
     final static int BAN_VALUE = MATE_VALUE - 100; // 长将判负的分值，低于该值将不写入置换表
     final static int WIN_VALUE = MATE_VALUE - 200; // 搜索出胜负的分值界限，超出此值就说明已经搜索出杀棋了
@@ -336,11 +337,11 @@ public class Engine {
      * @return 返回最佳分值
      */
     static int SearchFull(int vlAlpha, int vlBeta, int nDepth, boolean isNoNull) {
-        int i, nGenMoves;
+//        int i, nGenMoves;
         int vl, vlBest, mvBest;
         int nHashFlag = 0, mvHash, mv;
         int[] mvAndValue;
-        Integer[] mvs = new Integer[Rule.MAX_GEN_MOVES];
+//        Integer[] mvs = new Integer[Rule.MAX_GEN_MOVES];
         // 一个Alpha-Beta完全搜索分为以下几个阶段
 
         if (Engine.nDistance > 0) {
@@ -414,6 +415,8 @@ public class Engine {
 //        for (i = 0; i < nGenMoves; i++) {
 //            if (ChessboardUtil.makeMove(mvs[i])) {
         while ((mv = nextMove()) !=0 ){
+            LogUtil.d("LegalMove", ChessboardUtil.printBoard(Engine.nDistance, ChessboardUtil.currentMap));
+            LogUtil.d("LegalMove", "tmp\n" + ChessboardUtil.printBoard(Engine.nDistance, tmpMap));
 //            LogUtil.i("Hash", "nextMove:" + String.valueOf(mv) +
 //                    "\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) +
 //                    " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
@@ -449,12 +452,14 @@ public class Engine {
                     }
                 }
             }catch (Exception e){
-                LogUtil.i("LegalMove", "FROM PHASE: " + String.valueOf(phase));
-                LogUtil.i("LegalMove", "sdPlayer: " + String.valueOf(ChessboardUtil.sdPlayer));
-                LogUtil.i("LegalMove",
-                    "\tFrom " + Integer.toHexString(ChessboardUtil.getMoveSrc(mv)) +
-                    " To " + Integer.toHexString(ChessboardUtil.getMoveDst(mv)));
-                ChessboardUtil.printBoard(Engine.nDistance, "LegalMove");
+                LogUtil.e(TAG, e.toString());
+                LogUtil.e("LegalMove", "PHASE: " + String.valueOf(phase));
+                LogUtil.e("LegalMove", "sdPlayer: " + String.valueOf(ChessboardUtil.sdPlayer));
+                LogUtil.e("LegalMove",
+                        "\tFrom " + Integer.toHexString(ChessboardUtil.getMoveSrc(mv)) +
+                                " To " + Integer.toHexString(ChessboardUtil.getMoveDst(mv)));
+//                LogUtil.e("LegalMove", ChessboardUtil.printBoard(Engine.nDistance, ChessboardUtil.currentMap));
+//                LogUtil.e("LegalMove", ChessboardUtil.printBoard(Engine.nDistance, tmpMap));
             }
 //            if(!Rule.isLegalMove(mvBest)){
 //                LogUtil.i("LegalMove", "sdPlayer: " + String.valueOf(ChessboardUtil.sdPlayer));
