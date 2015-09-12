@@ -1,5 +1,7 @@
 package com.luojiawei.chinesechess.chinesechess4android;
 
+import javax.security.auth.callback.CallbackHandler;
+
 /**
  * Created by L1 on 15-08-24.
  * 象棋走法规则
@@ -208,13 +210,22 @@ public class Rule {
     static int generateMoves(Integer[] mvs, boolean bCapture) {
         int i, j, nGenMoves, nDelta, sqSrc, sqDst;
         int pcSelfSide, pcOppSide, pcSrc, pcDst;
-        int[] ucpcSquares;
+        int[] ucpcSquares = new int[256];
         int sdPlayer;
 
         // 生成所有走法，需要经过以下几个步骤：
-        ucpcSquares = ChessboardUtil.currentMap;
+//        ucpcSquares = ChessboardUtil.currentMap;
+        for (int k = 0; k < 256; k++) {
+            ucpcSquares[k] = ChessboardUtil.currentMap[k];
+            Engine.tmpMap[k] = ucpcSquares[k];
+        }
         sdPlayer = ChessboardUtil.sdPlayer;
         nGenMoves = 0;
+//        if(Engine.nDistance == 0){
+//            LogUtil.e("Generate", "ucpc\n" + ChessboardUtil.printBoard(Engine.nDistance, ucpcSquares));
+////            LogUtil.e("Generate", "curr\n" + ChessboardUtil.printBoard(Engine.nDistance, ChessboardUtil.currentMap));
+//        }
+//        Engine.tmpMap = ucpcSquares;
         pcSelfSide = ChessboardUtil.getSideTag(sdPlayer);
         pcOppSide = ChessboardUtil.getOppositeSideTag(sdPlayer);
         for (sqSrc = 0; sqSrc < 256; sqSrc++) {
