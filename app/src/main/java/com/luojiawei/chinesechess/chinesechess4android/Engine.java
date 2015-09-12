@@ -1,5 +1,7 @@
 package com.luojiawei.chinesechess.chinesechess4android;
 
+import android.sax.EndElementListener;
+
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -9,6 +11,7 @@ import java.util.Comparator;
  */
 public class Engine {
     static String TAG = "Engine";
+    static int phase;
     final static int MATE_VALUE = 10000;  // 最高分值，即将死的分值
     final static int BAN_VALUE = MATE_VALUE - 100; // 长将判负的分值，低于该值将不写入置换表
     final static int WIN_VALUE = MATE_VALUE - 200; // 搜索出胜负的分值界限，超出此值就说明已经搜索出杀棋了
@@ -88,11 +91,12 @@ public class Engine {
             case PHASE_HASH:
                 nPhase = PHASE_KILLER_1;
                 if (mvHash != 0) {
-                    LogUtil.i(TAG, "from PHASE_HASH" +
-//                            "\t mv:" + String.valueOf(mvHash) +
-//                            "\t From " + String.valueOf(ChessboardUtil.getMoveSrc(mvHash)) +
-//                            " To " + String.valueOf(ChessboardUtil.getMoveDst(mvHash)) +
-                            ChessboardUtil.getMoveString(mvHash));
+                    phase = 0;
+//                    LogUtil.i(TAG, "from PHASE_HASH" +
+////                            "\t mv:" + String.valueOf(mvHash) +
+////                            "\t From " + String.valueOf(ChessboardUtil.getMoveSrc(mvHash)) +
+////                            " To " + String.valueOf(ChessboardUtil.getMoveDst(mvHash)) +
+//                            ChessboardUtil.getMoveString(mvHash));
                     return mvHash;
                 }
                 // 技巧：这里没有"break"，表示"switch"的上一个"case"执行完后紧接着做下一个"case"，下同
@@ -101,11 +105,12 @@ public class Engine {
             case PHASE_KILLER_1:
                 nPhase = PHASE_KILLER_2;
                 if (mvKiller1 != mvHash && mvKiller1 != 0 && Rule.isLegalMove(mvKiller1)) {
-                    LogUtil.i(TAG, "from PHASE_KILLER_1" +
-//                            "\t mv:" + String.valueOf(mvKiller1) +
-//                            "\t From " + String.valueOf(ChessboardUtil.getMoveSrc(mvKiller1)) +
-//                            " To " + String.valueOf(ChessboardUtil.getMoveDst(mvKiller1)) +
-                            ChessboardUtil.getMoveString(mvKiller1));
+                    phase = 1;
+//                    LogUtil.i(TAG, "from PHASE_KILLER_1" +
+////                            "\t mv:" + String.valueOf(mvKiller1) +
+////                            "\t From " + String.valueOf(ChessboardUtil.getMoveSrc(mvKiller1)) +
+////                            " To " + String.valueOf(ChessboardUtil.getMoveDst(mvKiller1)) +
+//                            ChessboardUtil.getMoveString(mvKiller1));
                     return mvKiller1;
                 }
 
@@ -113,19 +118,28 @@ public class Engine {
             case PHASE_KILLER_2:
                 nPhase = PHASE_GEN_MOVES;
                 if (mvKiller2 != mvHash && mvKiller2 != 0 && Rule.isLegalMove(mvKiller2)) {
-                    LogUtil.i(TAG, "from PHASE_KILLER_2" +
-//                            "\t mv:" + String.valueOf(mvKiller2) +
-//                            "\t From " + String.valueOf(ChessboardUtil.getMoveSrc(mvKiller2)) +
-//                            " To " + String.valueOf(ChessboardUtil.getMoveDst(mvKiller2)) +
-                            ChessboardUtil.getMoveString(mvKiller2));
+                    phase = 2;
+//                    LogUtil.i(TAG, "from PHASE_KILLER_2" +
+////                            "\t mv:" + String.valueOf(mvKiller2) +
+////                            "\t From " + String.valueOf(ChessboardUtil.getMoveSrc(mvKiller2)) +
+////                            " To " + String.valueOf(ChessboardUtil.getMoveDst(mvKiller2)) +
+//                            ChessboardUtil.getMoveString(mvKiller2));
                     return mvKiller2;
                 }
 
                 // 3. 生成所有着法，完成后立即进入下一阶段；
             case PHASE_GEN_MOVES:
                 nPhase = PHASE_REST;
-                nGenMoves = Rule.generateMoves(mvs,false);
+//                ChessboardUtil.printBoard(Engine.nDistance);
+                nGenMoves = Rule.generateMoves(mvs, false);
                 Arrays.sort(mvs,0,nGenMoves,new CompareHistory());
+                for (int i = 0; i < nGenMoves; i++) {
+                    if(!Rule.isLegalMove(mvs[i])){
+                        LogUtil.i("LegalMove", ChessboardUtil.getMoveString(mvs[i]));
+                    }else{
+//                        LogUtil.i("LegalMove", "isLegalMove: " +String.valueOf(i));
+                    }
+                }
                 nIndex = 0;
 
                 // 4. 对剩余着法做历史表启发；
@@ -134,11 +148,12 @@ public class Engine {
                     mv = mvs[nIndex];
                     nIndex ++;
                     if (mv != mvHash && mv != mvKiller1 && mv != mvKiller2) {
-                        LogUtil.i(TAG, "from PHASE_REST" +
-//                                "\t mv:" + String.valueOf(mv) +
-//                                "\t From " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) +
-//                                " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)) +
-                                ChessboardUtil.getMoveString(mv));
+                        phase = 3;
+//                        LogUtil.i(TAG, "from PHASE_REST" +
+////                                "\t mv:" + String.valueOf(mv) +
+////                                "\t From " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) +
+////                                " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)) +
+//                                ChessboardUtil.getMoveString(mv));
                         return mv;
                     }
                 }
@@ -170,12 +185,14 @@ public class Engine {
             mvAndValue[1] = -MATE_VALUE;
             return mvAndValue;
         }
-        LogUtil.i("Hash"," -------get : " + String.valueOf(pos) +
+        LogUtil.i("Hash"," -------get : " +
+                String.valueOf(pos) +
 //                "\tkey:" + String.valueOf(zobr.key) +
 //                "\tlock0: " + String.valueOf(zobr.lock0) +
 //                "\tlock1: " + String.valueOf(zobr.lock1) +
-                "\t hsh.lock0: " + String.valueOf(hsh.lock0) +
-                "\t hsh.lock1: " + String.valueOf(hsh.lock1));
+//                "\t hsh.lock0: " + String.valueOf(hsh.lock0) +
+//                "\t hsh.lock1: " + String.valueOf(hsh.lock1) +
+                ChessboardUtil.getMoveString(hsh.mv));
         mvAndValue[0] = hsh.mv;
         bMate = false;
         if (hsh.vl > WIN_VALUE) {
@@ -240,11 +257,12 @@ public class Engine {
 //                "\tkey:" + String.valueOf(zobr.key) +
 //                "\tlock0: " + String.valueOf(zobr.lock0) +
 //                "\tlock1: " + String.valueOf(zobr.lock1) +
-                "\t hsh.lock0: " + String.valueOf(hashTable[pos].lock0) +
-                "\t hsh.lock1: " + String.valueOf(hashTable[pos].lock1) +
-                "\tvl: " + String.valueOf(hashTable[pos].vl) +
-                "\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) +
-                " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
+//                "\t hsh.lock0: " + String.valueOf(hashTable[pos].lock0) +
+//                "\t hsh.lock1: " + String.valueOf(hashTable[pos].lock1) +
+                "\t vl: " + String.valueOf(hashTable[pos].vl) +
+//                "\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) +
+//                " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)) +
+                ChessboardUtil.getMoveString(hsh.mv));
 //        for (int i = 0; i < 10; i++) {
 //            LogUtil.i("Hash", String.valueOf(hashTable[i].mv) + " " + String.valueOf(hashTable[i].lock0) + " " + String.valueOf(hashTable[i].lock1)+
 //                    " " + String.valueOf(hashTable[i].ucDepth)+ " " + String.valueOf(hashTable[i].ucFlag));
@@ -276,25 +294,25 @@ public class Engine {
     static void searchMain() {
         LogUtil.i(TAG, "searchMain zobr.lock0=" + String.valueOf(ChessboardUtil.zobr.lock0));
         int i, vl;
-        long t;
+        long startTime, spendTime;
 
         // 初始化
         initHistorytable(); //初始化历史表
         initKillers(); //初始化杀棋走法
         initHashTable(); //初始化置换表
-        t = System.currentTimeMillis();       // 初始化定时器
+        startTime = System.currentTimeMillis();       // 初始化定时器
         Engine.nDistance = 0; // 初始步数
 
         // 迭代加深过程
         for (i = 3; i <= LIMIT_DEPTH; i++) {
             vl = SearchFull(-MATE_VALUE, MATE_VALUE, i, false);
-            long time = System.currentTimeMillis() - t;
+            spendTime = System.currentTimeMillis() - startTime;
 //            if(i>=5) {
                 LogUtil.i(TAG, "Best: vl=" + String.valueOf(vl) +
-                        "\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mvResult)) +
-                        " To " + String.valueOf(ChessboardUtil.getMoveDst(mvResult)) +
+                        "\t From " + Integer.toHexString(ChessboardUtil.getMoveSrc(mvResult)) +
+                        " To " + Integer.toHexString(ChessboardUtil.getMoveDst(mvResult)) +
                         "\tDepth=" + String.valueOf(i) +
-                        "\tTime=" + String.valueOf(time));
+                        "\tTime=" + String.valueOf(spendTime));
 //            }
 
             // 搜索到杀棋，就终止搜索
@@ -302,7 +320,7 @@ public class Engine {
                 break;
             }
             // 超过一秒，就终止搜索
-            if (time > CLOCKS_PER_SEC) {
+            if (spendTime > CLOCKS_PER_SEC) {
                 break;
             }
         }
@@ -399,32 +417,53 @@ public class Engine {
 //            LogUtil.i("Hash", "nextMove:" + String.valueOf(mv) +
 //                    "\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) +
 //                    " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
-            if(!Rule.isLegalMove(mv)){
-                LogUtil.i(TAG, "unLegalMove");
-                continue;
-            }
-            if(ChessboardUtil.makeMove(mv)){
-                // 将军延伸（被将军时多搜索一层）
-                vl = -SearchFull(-vlBeta, -vlAlpha, ChessboardUtil.inCheck() ? nDepth : nDepth - 1, false);
-                ChessboardUtil.undoMakeMove();
+//            if(!Rule.isLegalMove(mv)){
+//                LogUtil.i("LegalMove", "sdPlayer: " + String.valueOf(ChessboardUtil.sdPlayer));
+//                LogUtil.i("LegalMove",
+//                    "\tFrom " + Integer.toHexString(ChessboardUtil.getMoveSrc(mv)) +
+//                    " To " + Integer.toHexString(ChessboardUtil.getMoveDst(mv)));
+//                ChessboardUtil.printBoard(Engine.nDistance, "LegalMove");
+//                continue;
+//            }
+            try {
+                if (ChessboardUtil.makeMove(mv)) {
+                    // 将军延伸（被将军时多搜索一层）
+                    vl = -SearchFull(-vlBeta, -vlAlpha, ChessboardUtil.inCheck() ? nDepth : nDepth - 1, false);
+                    ChessboardUtil.undoMakeMove();
 
-                // 5. 进行Alpha-Beta大小判断和截断
-                if (vl > vlBest) {    // 找到最佳值(但不能确定是Alpha、PV还是Beta走法)
-                    vlBest = vl;        // "vlBest"就是目前要返回的最佳值，可能超出Alpha-Beta边界
-                    if (vl >= vlBeta) { // 找到一个Beta走法
+                    // 5. 进行Alpha-Beta大小判断和截断
+                    if (vl > vlBest) {    // 找到最佳值(但不能确定是Alpha、PV还是Beta走法)
+                        vlBest = vl;        // "vlBest"就是目前要返回的最佳值，可能超出Alpha-Beta边界
+                        if (vl >= vlBeta) { // 找到一个Beta走法
 //                        mvBest = mvs[i];  // Beta走法要保存到历史表
-                        nHashFlag = HASH_BETA;
-                        mvBest = mv;
-                        break;            // Beta截断
-                    }
-                    if (vl > vlAlpha) { // 找到一个PV走法
+                            nHashFlag = HASH_BETA;
+                            mvBest = mv;
+                            break;            // Beta截断
+                        }
+                        if (vl > vlAlpha) { // 找到一个PV走法
 //                        mvBest = mvs[i];  // PV走法要保存到历史表
-                        nHashFlag = HASH_PV;
-                        mvBest = mv;
-                        vlAlpha = vl;     // 缩小Alpha-Beta边界
+                            nHashFlag = HASH_PV;
+                            mvBest = mv;
+                            vlAlpha = vl;     // 缩小Alpha-Beta边界
+                        }
                     }
                 }
+            }catch (Exception e){
+                LogUtil.i("LegalMove", "FROM PHASE: " + String.valueOf(phase));
+                LogUtil.i("LegalMove", "sdPlayer: " + String.valueOf(ChessboardUtil.sdPlayer));
+                LogUtil.i("LegalMove",
+                    "\tFrom " + Integer.toHexString(ChessboardUtil.getMoveSrc(mv)) +
+                    " To " + Integer.toHexString(ChessboardUtil.getMoveDst(mv)));
+                ChessboardUtil.printBoard(Engine.nDistance, "LegalMove");
             }
+//            if(!Rule.isLegalMove(mvBest)){
+//                LogUtil.i("LegalMove", "sdPlayer: " + String.valueOf(ChessboardUtil.sdPlayer));
+//                LogUtil.i("LegalMove",
+//                    "\tFrom " + Integer.toHexString(ChessboardUtil.getMoveSrc(mv)) +
+//                    " To " + Integer.toHexString(ChessboardUtil.getMoveDst(mv)));
+//                ChessboardUtil.printBoard(Engine.nDistance, "LegalMove");
+//                continue;
+//            }
         }
 
 
@@ -527,9 +566,8 @@ public class Engine {
 
     // 保存最佳走法
     static void setBestMove(int mv, int nDepth) {
-        LogUtil.i("setBestMove","setBestMove: From " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) +
-                " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)) +
-                "\tDepth=" + String.valueOf(nDepth));
+        LogUtil.i("setBestMove","BestMove:" + ChessboardUtil.getMoveString(mv) +
+                "\t Depth=" + String.valueOf(nDepth));
         int[] lpmvKillers;
         nHistoryTable[mv] += nDepth * nDepth;
         lpmvKillers = mvKillers[nDistance];
