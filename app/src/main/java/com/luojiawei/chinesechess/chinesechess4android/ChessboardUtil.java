@@ -84,7 +84,7 @@ public class ChessboardUtil {
 
     public static String getMoveString(int mv){
         if(!Rule.isLegalMove(mv)){
-            return "\t unLegalMove";
+            return "\t *** unLegalMove ***";
         }
         int chess, from, to;
         int fromX, fromY, toX, toY;
@@ -225,13 +225,13 @@ public class ChessboardUtil {
         }
         changeSide();
         mvsList[nHistoryMoveNum].set(mv, pcCaptured, Rule.isChecked(), key);
-        ++Engine.nDistance;
-        ++nHistoryMoveNum;
+        Engine.nDistance++;
+        nHistoryMoveNum++;
         return true;
     }
 
     public static void undoMakeMove() { // 撤消走一步棋
-        --Engine.nDistance;
+        Engine.nDistance--;
         nHistoryMoveNum--;
         changeSide();
         undoMovePiece(mvsList[nHistoryMoveNum].mv, mvsList[nHistoryMoveNum].ucpcCaptured);
@@ -381,6 +381,31 @@ public class ChessboardUtil {
     // 走法水平镜像
     public static int getFlipMove(int mv) {
         return getMove(centreFlip(getMoveSrc(mv)), centreFlip(getMoveDst(mv)));
+    }
+
+    //输出棋盘
+    public static void printBoard(int nDistance, String tag){
+        String[] str = {"0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"};
+        StringBuffer sb = new StringBuffer();
+        sb.append("nDistance: ");
+        sb.append(nDistance);
+        sb.append("\n-\t");
+        for (int i = 0; i < 16; i++) {
+            sb.append(str[i]);
+            sb.append("\t");
+        }
+        sb.append("\n");
+        for (int i = 0; i < 256; i++) {
+            if (i % 16 == 0){
+                sb.append("\n");
+                sb.append(str[i/16]);
+                sb.append("\t");
+            }else{
+                sb.append("\t");
+            }
+            sb.append(currentMap[i]);
+        }
+        LogUtil.i(tag, sb.toString());
     }
 
 }
