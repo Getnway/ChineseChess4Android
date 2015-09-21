@@ -26,4 +26,12 @@
         android:layout_alignParentBottom="true"
         android:layout_toRightOf="@+id/btn_new_game"/>
 
+    <Button
+        android:id="@+id/btn_undo"
+        android:text="@string/undo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_toRightOf="@+id/btn_flip_board"/>
+
 </RelativeLayout>

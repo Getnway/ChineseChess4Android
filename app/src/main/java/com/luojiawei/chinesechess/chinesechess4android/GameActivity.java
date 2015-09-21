@@ -15,6 +15,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
     String TAG = "GameActivity";
     Button mBtnNewGame;
     Button mBtnFlipBoard;
+    Button mBtnUndo;
     GameView gameView;
 
     @Override
@@ -32,6 +33,8 @@ public class GameActivity extends Activity implements View.OnClickListener {
         mBtnNewGame.setOnClickListener(this);
         mBtnFlipBoard = (Button)findViewById(R.id.btn_flip_board);
         mBtnFlipBoard.setOnClickListener(this);
+        mBtnUndo = (Button)findViewById(R.id.btn_undo);
+        mBtnUndo.setOnClickListener(this);
 
         gameView = (GameView)findViewById(R.id.game_view);
     }
@@ -69,6 +72,9 @@ public class GameActivity extends Activity implements View.OnClickListener {
                 LogUtil.i(TAG,"flipBoardClick");
                 gameView.flipBoard();
                 break;
+            case R.id.btn_undo:
+                LogUtil.i(TAG,"undoClick");
+                gameView.undo();
             default:
                 break;
         }

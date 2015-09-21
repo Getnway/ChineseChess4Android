@@ -8,6 +8,7 @@
     <string name="bluetooth_conn">蓝牙对战</string>
     <string name="new_game">新局</string>
     <string name="flip_board">翻转</string>
+    <string name="undo">悔棋</string>
     <string name="is_win">Win</string>
     <string name="AI_Thinking_wait">电脑正在思考中...请稍后再试！</string>
     <string name="AI_Thinking_disturb">电脑正在思考中...请勿打扰！</string>
