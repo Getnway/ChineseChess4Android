@@ -20,8 +20,8 @@ public class Engine {
     static int[] nHistoryTable = new int[65536]; // 历史表
     static int nDistance;                  // 距离根节点的步数
     static CompareHistory compareHistory = new CompareHistory();
-    final static boolean NO_NULL = true;   // "SearchFull"的参数
-    static boolean GEN_CAPTURE = true;  // "GenerateMoves"参数
+    final static boolean NO_NULL = true;   // "SearchFull"的参数，是否空步裁剪
+    final static boolean GEN_CAPTURE = true;  // "GenerateMoves"参数，是否只生成杀子走法
     final static int NULL_DEPTH = 2;      // 空步裁剪的裁剪深度 2或3
 
 
