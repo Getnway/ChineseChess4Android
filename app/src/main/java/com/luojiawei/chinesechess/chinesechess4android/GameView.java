@@ -11,6 +11,8 @@ import android.view.MotionEvent;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import java.util.Stack;
+
 /**
  * Created by L1 on 15-08-21.
  * 游戏界面与控制
@@ -32,6 +34,7 @@ public class GameView extends ImageView {
     boolean isFilpped = false;  //是否翻转棋盘
     boolean isGameOver = false; //是否游戏结束
     boolean isAIThinking = false;
+    Stack<UndoStack> chessSatck = new Stack<>();
     Thread searchThread;
     int[] currentMap = new int[256];    //保存当前局面，拷贝自ChessboardUtil.currentMap
 
@@ -282,6 +285,7 @@ public class GameView extends ImageView {
     private void touchEventOnBoard(int pos) {
         int vlRep;
         int chessFlag = ChessboardUtil.currentMap[pos]; //点击位置的棋子
+        int pcCaptured;
         LogUtil.i(Tag, "Piece:\t" + String.valueOf(chessFlag));
 
         // 如果点击自己的子，那么直接选中该子
@@ -306,7 +310,9 @@ public class GameView extends ImageView {
                 mv = ChessboardUtil.getMove(posFromOpp, posToOpp); //获取走法
             }
             if (Rule.isLegalMove(mv)) {
+                pcCaptured = ChessboardUtil.currentMap[ChessboardUtil.getMoveDst(mv)];
                 if (ChessboardUtil.makeMove(mv)) {    //没被将军，走棋成功
+                    chessSatck.push(new UndoStack(mv, pcCaptured));   //下棋入栈
                     LogUtil.i(Tag, "mv:\t" + String.valueOf(mv));
                     LogUtil.i(Tag, "Piece:\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
                     isSelectFrom = false;
@@ -382,6 +388,9 @@ public class GameView extends ImageView {
             posFromOpp = ChessboardUtil.getMoveSrc(mv);
             posToOpp = ChessboardUtil.getMoveDst(mv);
         }
+
+        int pcCaptured = ChessboardUtil.currentMap[ChessboardUtil.getMoveDst(mv)];
+        chessSatck.push(new UndoStack(mv, pcCaptured));   //下棋入栈
         ChessboardUtil.makeMove(mv);
         copyCurrentMap();
         postInvalidate();   //主线程外重绘棋盘
@@ -409,4 +418,29 @@ public class GameView extends ImageView {
         }
     }
 
+    public void undo() {
+        if(isAIThinking){
+            return;
+        }
+        if(chessSatck.size() < 2){
+            return;
+        }
+        UndoStack undoMv = chessSatck.pop();
+        int src = ChessboardUtil.getMoveSrc(undoMv.mv);
+        int dst = ChessboardUtil.getMoveDst(undoMv.mv);
+        int mv = ChessboardUtil.getMove(dst, src);
+        ChessboardUtil.movePiece(mv);
+        ChessboardUtil.currentMap[dst] = undoMv.pcCaptured;
+
+        undoMv = chessSatck.pop();
+        src = ChessboardUtil.getMoveSrc(undoMv.mv);
+        dst = ChessboardUtil.getMoveDst(undoMv.mv);
+        mv = ChessboardUtil.getMove(dst, src);
+        ChessboardUtil.movePiece(mv);
+        ChessboardUtil.currentMap[dst] = undoMv.pcCaptured;
+
+        posFrom = posTo = posFromOpp = posToOpp = -1;
+        copyCurrentMap();   //保存当前界面，防止AI搜索时，发生错误绘制棋盘
+        invalidate();   //重绘棋盘
+    }
 }
