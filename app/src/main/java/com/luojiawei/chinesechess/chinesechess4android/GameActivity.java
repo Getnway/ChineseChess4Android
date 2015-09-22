@@ -1,6 +1,8 @@
 package com.luojiawei.chinesechess.chinesechess4android;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -17,6 +19,12 @@ public class GameActivity extends Activity implements View.OnClickListener {
     Button mBtnFlipBoard;
     Button mBtnUndo;
     GameView gameView;
+
+    public static void actionStart(Context context, int rank){
+        Intent intent = new Intent(context, GameActivity.class);
+        intent.putExtra("rank", rank);
+        context.startActivity(intent);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +45,34 @@ public class GameActivity extends Activity implements View.OnClickListener {
         mBtnUndo.setOnClickListener(this);
 
         gameView = (GameView)findViewById(R.id.game_view);
+
+        Intent intent = getIntent();
+        int rank = intent.getIntExtra("rank", 10);
+        switch (rank){
+            case 0: //蓝牙对战
+                gameView.AI = false;
+                break;
+            case 1: //初级
+                gameView.AI = true;
+                Engine.MIN_LEVEL = 1;
+                Engine.LIMIT_TIME = 100;
+                break;
+            case 2: //中级
+                gameView.AI = true;
+                Engine.MIN_LEVEL = 3;
+                Engine.LIMIT_TIME = 1000;
+                break;
+            case 3: //高级
+                gameView.AI = true;
+                Engine.MIN_LEVEL = 3;
+                Engine.LIMIT_TIME = 5000;
+                break;
+            default:
+                gameView.AI = true;
+                Engine.MIN_LEVEL = 1;
+                Engine.LIMIT_TIME = 100;
+                break;
+        }
     }
 
     @Override
