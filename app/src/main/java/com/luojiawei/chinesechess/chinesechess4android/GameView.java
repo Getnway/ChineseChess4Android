@@ -20,6 +20,7 @@ import java.util.Stack;
 public class GameView extends ImageView {
     String Tag = "GameView";
     final int RED = 0, BLACK = 1;  //选择框颜色
+    public boolean AI = true;   //是否人机对战
     int screenX, screenY;   //棋盘对应的屏幕坐标
     int mScreenW, mScreenH; //屏幕宽高
     int mChessSize;  //棋子长宽
@@ -338,6 +339,7 @@ public class GameView extends ImageView {
                         if (ChessboardUtil.captured()) {
                             ChessboardUtil.setIrrev();
                         }
+                        if(AI) {    //人机对战
 //                        LogUtil.i(Tag,"State:"+searchThread.getState().toString());
 //                        if (searchThread.isAlive()) {
 //                            LogUtil.i(Tag, "isAlive");
@@ -346,14 +348,17 @@ public class GameView extends ImageView {
 //                        }
 //                        searchThread.start();
 //                        responseMove();
-                        new Thread() {
-                            @Override
-                            public void run() {
-                                isAIThinking = true;
-                                responseMove(); //电脑回应一步棋
-                                isAIThinking = false;
-                            }
-                        }.start();
+                            new Thread() {
+                                @Override
+                                public void run() {
+                                    isAIThinking = true;
+                                    responseMove(); //电脑回应一步棋
+                                    isAIThinking = false;
+                                }
+                            }.start();
+                        }else{  //人人对战
+
+                        }
                     }
                 } else {  //走棋失败，被将军中
                     LogUtil.i(Tag, "********isCheck*******");
@@ -422,22 +427,20 @@ public class GameView extends ImageView {
         if(isAIThinking){
             return;
         }
-        if(chessSatck.size() < 2){
+        if(AI && chessSatck.size() < 2){    //人机悔两步
+            return;
+        }else if(chessSatck.size() <= 0){
             return;
         }
         UndoStack undoMv = chessSatck.pop();
-        int src = ChessboardUtil.getMoveSrc(undoMv.mv);
-        int dst = ChessboardUtil.getMoveDst(undoMv.mv);
-        int mv = ChessboardUtil.getMove(dst, src);
-        ChessboardUtil.movePiece(mv);
-        ChessboardUtil.currentMap[dst] = undoMv.pcCaptured;
+        ChessboardUtil.undoMovePiece(undoMv.mv, undoMv.pcCaptured);
+        ChessboardUtil.changeSide();
 
-        undoMv = chessSatck.pop();
-        src = ChessboardUtil.getMoveSrc(undoMv.mv);
-        dst = ChessboardUtil.getMoveDst(undoMv.mv);
-        mv = ChessboardUtil.getMove(dst, src);
-        ChessboardUtil.movePiece(mv);
-        ChessboardUtil.currentMap[dst] = undoMv.pcCaptured;
+        if(AI) {
+            undoMv = chessSatck.pop();
+            ChessboardUtil.undoMovePiece(undoMv.mv, undoMv.pcCaptured);
+            ChessboardUtil.changeSide();
+        }
 
         posFrom = posTo = posFromOpp = posToOpp = -1;
         copyCurrentMap();   //保存当前界面，防止AI搜索时，发生错误绘制棋盘
