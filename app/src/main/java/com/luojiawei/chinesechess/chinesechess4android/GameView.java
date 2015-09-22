@@ -63,6 +63,7 @@ public class GameView extends ImageView {
         mBoardBottom = mChessSize * 10; //纵向10个棋位，计算出底边
 
         setImageBitmap(Bitmap.createScaledBitmap(mBmSelectBoxRed, mScreenW, mScreenW / 9 * 12, false));   //可确定布局大小
+        chessSatck.clear();
 
 //        searchThread = new Thread() {
 //            @Override
@@ -92,6 +93,7 @@ public class GameView extends ImageView {
         ChessboardUtil.startup();
         posFrom = posTo = posFromOpp = posToOpp = -1;
         isGameOver = false;
+        chessSatck.clear();
 //        ZobristStruct.initZobrist(ChessboardUtil.zobrPlayer,ChessboardUtil.zobrTable);
         copyCurrentMap();
         invalidate();
