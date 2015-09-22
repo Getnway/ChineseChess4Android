@@ -15,6 +15,8 @@ public class Engine {
     final static int MATE_VALUE = 10000;  // 最高分值，即将死的分值
     final static int WIN_VALUE = MATE_VALUE - 100; // 搜索出胜负的分值界限，超出此值就说明已经搜索出杀棋了
     static int LIMIT_DEPTH = 64;    // 最大的搜索深度
+    static int LIMIT_TIME = 1000;   //单位（ms）
+    static int MIN_LEVEL = 1;   //最少搜索层次
     static long CLOCKS_PER_SEC = 1000;   //单位（ms）
     static int mvResult;             // 电脑搜索到的最好走法
     static int[] nHistoryTable = new int[65536]; // 历史表
@@ -51,7 +53,7 @@ public class Engine {
         Engine.nDistance = 0; // 初始步数
 
         // 迭代加深过程
-        for (i = 3; i <= LIMIT_DEPTH; i++) {
+        for (i = MIN_LEVEL; i <= LIMIT_DEPTH; i++) {
             vl = SearchFull(-MATE_VALUE, MATE_VALUE, i, false);
             long time = System.currentTimeMillis() - t;
 //            if(i>=5) {
@@ -66,8 +68,8 @@ public class Engine {
             if (vl > WIN_VALUE || vl < -WIN_VALUE) {
                 break;
             }
-            // 超过一秒，就终止搜索
-            if (time > CLOCKS_PER_SEC) {
+            // 超过限制时间，就终止搜索
+            if (time > LIMIT_TIME) {
                 break;
             }
         }
