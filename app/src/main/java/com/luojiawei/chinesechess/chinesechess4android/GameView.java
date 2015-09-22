@@ -424,11 +424,10 @@ public class GameView extends ImageView {
     }
 
     public void undo() {
-        if(isAIThinking){
-            return;
-        }
-        if(AI && chessSatck.size() < 2){    //人机悔两步
-            return;
+        if(AI){    //人机悔两步
+            if(isAIThinking || chessSatck.size() < 2){
+                return;
+            }
         }else if(chessSatck.size() <= 0){
             return;
         }
