@@ -266,11 +266,12 @@ public class GameView extends ImageView {
         }
         if(isGameOver){
             LogUtil.i(Tag, "Is Game Over!!!");
+            Toast.makeText(getContext(),R.string.is_game_over,Toast.LENGTH_LONG).show();
             return false;
         }
         if (isAIThinking) {
             LogUtil.i(Tag, "AI Thinking...");
-            Toast.makeText(MyApplication.getContext(), R.string.AI_Thinking_disturb, Toast.LENGTH_LONG);
+            Toast.makeText(MyApplication.getContext(), R.string.AI_Thinking_disturb, Toast.LENGTH_LONG).show();
             return false;
         }
         LogUtil.i(Tag, "Touch:\t(" + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()) + ")--------------------------------" + this.toString());
@@ -326,6 +327,7 @@ public class GameView extends ImageView {
                     if (Rule.isMate()) {  //将死
 //                        Toast.makeText(getContext(), R.string.is_win,Toast.LENGTH_LONG);/
                         LogUtil.i(Tag, "*********Win*********");
+                        Toast.makeText(getContext(),R.string.human_win,Toast.LENGTH_LONG).show();
                         isGameOver = true;
                     }  else if (vlRep > 0) {
                         vlRep = ChessboardUtil.repValue(vlRep);
@@ -364,6 +366,7 @@ public class GameView extends ImageView {
                     }
                 } else {  //走棋失败，被将军中
                     LogUtil.i(Tag, "********isCheck*******");
+                    Toast.makeText(getContext(),R.string.is_check,Toast.LENGTH_LONG).show();
                 }
             }
         }
@@ -406,6 +409,7 @@ public class GameView extends ImageView {
         if (Rule.isMate()) {
             // 如果分出胜负，那么播放胜负的声音，并且弹出不带声音的提示框
             LogUtil.i(Tag, "*********AI Win*********");
+            Toast.makeText(getContext(),R.string.AI_win,Toast.LENGTH_LONG).show();
             isGameOver = true;
         }else if(vlRep>0){
             vlRep = ChessboardUtil.repValue(vlRep);
