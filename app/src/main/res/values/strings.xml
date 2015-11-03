@@ -15,6 +15,8 @@
     <string name="AI_Thinking">电脑正在思考中...</string>
     <string name="human_win">恭喜获胜！</string>
     <string name="AI_win">电脑获胜！</string>
+    <string name="is_check">被将军啦！</string>
+    <string name="is_game_over">该局结束啦！开始新局吧^_^</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_game">GameActivity</string>
 </resources>
