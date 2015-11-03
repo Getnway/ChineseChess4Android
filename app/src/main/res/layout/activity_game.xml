@@ -11,27 +11,32 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true" />
 
-    <Button
-        android:id="@+id/btn_new_game"
-        android:text="@string/new_game"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/btn_box"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true" />
+        android:layout_alignParentBottom="true">
+        <Button
+            android:id="@+id/btn_new_game"
+            android:text="@string/new_game"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"/>
 
-    <Button
-        android:id="@+id/btn_flip_board"
-        android:text="@string/flip_board"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_toRightOf="@+id/btn_new_game"/>
+        <Button
+            android:id="@+id/btn_flip_board"
+            android:text="@string/flip_board"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"/>
 
-    <Button
-        android:id="@+id/btn_undo"
-        android:text="@string/undo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_toRightOf="@+id/btn_flip_board"/>
+        <Button
+            android:id="@+id/btn_undo"
+            android:text="@string/undo"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"/>
 
+
+    </LinearLayout>
 </RelativeLayout>
