@@ -6,6 +6,8 @@ package com.luojiawei.chinesechess.chinesechess4android;
 public class ChessboardUtil {
     static String TAG = "ChessboardUtil";
     public static int sdPlayer;                   // 轮到谁走，0=红方，1=黑方
+    public static final int RED_MOVE = 0;         //轮到红方走棋
+    public static final int BLACK_MOVE = 1;       //轮到黑方走棋
     public static int[] currentMap = new int[256];          // 棋盘上的棋子
 
     final static int MAX_MOVES = 256;     // 最大的历史走法数

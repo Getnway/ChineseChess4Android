@@ -160,6 +160,23 @@ public class GameView extends ImageView {
             drawSelectBox(canvas, posToOpp, RED);
         }
 
+        //绘制轮到哪方走棋
+        final int posBlackSide = 230;
+        final int posRedSide = 232;
+        screenX = mChessSize * (ChessboardUtil.getCoordX(posRedSide) - ChessboardUtil.BOARD_LEFT);
+        screenY = mChessSize * (ChessboardUtil.getCoordY(posRedSide) - ChessboardUtil.BOARD_TOP);
+        canvas.drawBitmap(mBmAllChess[0], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
+        if(ChessboardUtil.sdPlayer == ChessboardUtil.RED_MOVE){
+            canvas.drawBitmap(mBmSelectBoxBlack, null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
+        }
+        screenX = mChessSize * (ChessboardUtil.getCoordX(posBlackSide) - ChessboardUtil.BOARD_LEFT);
+        screenY = mChessSize * (ChessboardUtil.getCoordY(posBlackSide) - ChessboardUtil.BOARD_TOP);
+        canvas.drawBitmap(mBmAllChess[7], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
+        if(ChessboardUtil.sdPlayer == ChessboardUtil.BLACK_MOVE){
+            canvas.drawBitmap(mBmSelectBoxRed, null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
+        }
+
+
         //绘制文本
 //        canvas.drawLine(0, mBoardBottom, 50, mBoardBottom + 50,null);
 //        mText = "haha";
@@ -184,13 +201,13 @@ public class GameView extends ImageView {
 //        LogUtil.i(Tag,"drawPiece Position:"+String.valueOf(position));
 //        LogUtil.i(Tag,"drawPiece Flag:"+String.valueOf(currentMap[position]));
         switch (currentMap[position]) {
-            case 16:    //帅
+            case 16:    //将
                 canvas.drawBitmap(mBmAllChess[7], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
                 break;
-            case 17:    //仕
+            case 17:    //士
                 canvas.drawBitmap(mBmAllChess[8], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
                 break;
-            case 18:    //相
+            case 18:    //象
                 canvas.drawBitmap(mBmAllChess[9], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
                 break;
             case 19:    //马
@@ -199,16 +216,16 @@ public class GameView extends ImageView {
             case 20:    //车
                 canvas.drawBitmap(mBmAllChess[11], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
                 break;
-            case 21:    //砲
+            case 21:    //炮
                 canvas.drawBitmap(mBmAllChess[12], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
                 break;
-            case 22:    //兵
+            case 22:    //卒
                 canvas.drawBitmap(mBmAllChess[13], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
                 break;
-            case 8:    //将
+            case 8:    //帅
                 canvas.drawBitmap(mBmAllChess[0], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
                 break;
-            case 9:    //士
+            case 9:    //仕
                 canvas.drawBitmap(mBmAllChess[1], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
                 break;
             case 10:    //象
@@ -220,10 +237,10 @@ public class GameView extends ImageView {
             case 12:    //车
                 canvas.drawBitmap(mBmAllChess[4], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
                 break;
-            case 13:    //炮
+            case 13:    //跑
                 canvas.drawBitmap(mBmAllChess[5], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
                 break;
-            case 14:    //卒
+            case 14:    //兵
                 canvas.drawBitmap(mBmAllChess[6], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
                 break;
         }
@@ -266,12 +283,12 @@ public class GameView extends ImageView {
         }
         if(isGameOver){
             LogUtil.i(Tag, "Is Game Over!!!");
-            Toast.makeText(getContext(),R.string.is_game_over,Toast.LENGTH_LONG).show();
+            showText(R.string.is_game_over);
             return false;
         }
         if (isAIThinking) {
             LogUtil.i(Tag, "AI Thinking...");
-            Toast.makeText(MyApplication.getContext(), R.string.AI_Thinking_disturb, Toast.LENGTH_LONG).show();
+            showText(R.string.AI_Thinking_disturb);
             return false;
         }
         LogUtil.i(Tag, "Touch:\t(" + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()) + ")--------------------------------" + this.toString());
@@ -327,7 +344,7 @@ public class GameView extends ImageView {
                     if (Rule.isMate()) {  //将死
 //                        Toast.makeText(getContext(), R.string.is_win,Toast.LENGTH_LONG);/
                         LogUtil.i(Tag, "*********Win*********");
-                        Toast.makeText(getContext(),R.string.human_win,Toast.LENGTH_LONG).show();
+                        showText(R.string.human_win);
                         isGameOver = true;
                     }  else if (vlRep > 0) {
                         vlRep = ChessboardUtil.repValue(vlRep);
@@ -366,8 +383,10 @@ public class GameView extends ImageView {
                     }
                 } else {  //走棋失败，被将军中
                     LogUtil.i(Tag, "********isCheck*******");
-                    Toast.makeText(getContext(),R.string.is_check,Toast.LENGTH_LONG).show();
+                    showText(R.string.is_check);
                 }
+            }else{
+                showText(R.string.mv_unLegal);
             }
         }
     }
@@ -409,7 +428,7 @@ public class GameView extends ImageView {
         if (Rule.isMate()) {
             // 如果分出胜负，那么播放胜负的声音，并且弹出不带声音的提示框
             LogUtil.i(Tag, "*********AI Win*********");
-            Toast.makeText(getContext(),R.string.AI_win,Toast.LENGTH_LONG).show();
+            showText(R.string.AI_win);
             isGameOver = true;
         }else if(vlRep>0){
             vlRep = ChessboardUtil.repValue(vlRep);
@@ -429,6 +448,9 @@ public class GameView extends ImageView {
         }
     }
 
+    /**
+     * 悔棋
+     */
     public void undo() {
         if(AI){    //人机悔两步
             if(isAIThinking || chessSatck.size() < 2){
@@ -450,5 +472,9 @@ public class GameView extends ImageView {
         posFrom = posTo = posFromOpp = posToOpp = -1;
         copyCurrentMap();   //保存当前界面，防止AI搜索时，发生错误绘制棋盘
         invalidate();   //重绘棋盘
+    }
+
+    public void showText(int resId){
+        Toast.makeText(getContext(),resId,Toast.LENGTH_LONG).show();
     }
 }
