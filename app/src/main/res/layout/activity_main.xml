@@ -2,35 +2,49 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center_horizontal|center_vertical"
-    android:background="@drawable/main"
-    android:orientation="vertical" >
+    android:gravity="center_horizontal"
+    android:background="@drawable/bg_main3"
+    android:orientation="vertical">
 
+    <ImageView
+        android:layout_marginTop="10dp"
+        android:layout_width="300dp"
+        android:layout_height="150dp"
+        android:background="@drawable/zgxq"/>
     <Button
+        android:layout_marginTop="20dp"
         android:id="@+id/btn_low_rank"
         android:text="@string/low_rank"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_btn3"
+        android:textSize="@dimen/text_size"/>
 
     <Button
         android:layout_marginTop="40dp"
         android:id="@+id/btn_middle_rank"
         android:text="@string/middle_rank"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_btn3"
+        android:textSize="@dimen/text_size" />
 
     <Button
         android:layout_marginTop="40dp"
         android:id="@+id/btn_high_rank"
         android:text="@string/high_rank"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_btn3"
+        android:textSize="@dimen/text_size" />
 
     <Button
         android:layout_marginTop="40dp"
         android:id="@+id/btn_bluetooth"
         android:text="@string/bluetooth_conn"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_btn3"
+        android:textSize="@dimen/text_size" />
 
 </LinearLayout>
