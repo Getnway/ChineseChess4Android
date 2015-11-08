@@ -135,20 +135,6 @@ public class ChessboardUtil {
         return true;
     }
 
-    public static boolean makeMoveNotCheck(int mv) {         // 走一步棋
-        long key = zobr.key;
-        int pcCaptured = movePiece(mv);
-//        if (Rule.isChecked()) {
-//            undoMovePiece(mv, pcCaptured);
-//            return false;
-//        }
-        changeSide();
-        mvsList[nHistoryMoveNum].set(mv, pcCaptured, Rule.isChecked(), key);
-        ++Engine.nDistance;
-        ++nHistoryMoveNum;
-        return true;
-    }
-
     public static void undoMakeMove() { // 撤消走一步棋
         --Engine.nDistance;
         nHistoryMoveNum--;

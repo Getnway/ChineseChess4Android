@@ -18,7 +18,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private Button mBtnMiddleRank;
     private Button mBtnHighRank;
     private Button mBtnBluetooth;
-    GameView gameView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,19 +46,19 @@ public class MainActivity extends Activity implements View.OnClickListener {
         switch (v.getId()){
             case R.id.btn_low_rank:
                 LogUtil.i(getLocalClassName(), "btn_low_rank");
-                GameActivity.actionStart(MainActivity.this, 1);
+                GameActivity.actionStart(MainActivity.this, GameActivity.LOW_RANK);
                 break;
             case R.id.btn_middle_rank:
                 LogUtil.i(getLocalClassName(), "btn_middle_rank");
-                GameActivity.actionStart(MainActivity.this, 2);
+                GameActivity.actionStart(MainActivity.this, GameActivity.MIDDLE_RANK);
                 break;
             case R.id.btn_high_rank:
                 LogUtil.i(getLocalClassName(), "btn_high_rank");
-                GameActivity.actionStart(MainActivity.this, 3);
+                GameActivity.actionStart(MainActivity.this, GameActivity.HIGH_RANK);
                 break;
             case R.id.btn_bluetooth:
                 LogUtil.i(getLocalClassName(), "btn_bluetooth");
-                GameActivity.actionStart(MainActivity.this, 0);
+                GameActivity.actionStart(MainActivity.this, GameActivity.BLUETOOTH);
                 break;
             default:
                 break;
