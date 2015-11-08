@@ -21,6 +21,11 @@
             android:name=".GameActivity"
             android:label="@string/title_activity_game" >
         </activity>
+        <activity
+            android:name=".Setting"
+            android:label="@string/title_activity_setting"
+            android:theme="@style/Base.Theme.AppCompat.Dialog">
+        </activity>
     </application>
 
 </manifest>
