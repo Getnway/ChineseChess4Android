@@ -286,13 +286,13 @@ public class GameView extends ImageView {
             return false;
         }
 //        if(AI){
-//            if (isAIThinking) {
-//                LogUtil.i(Tag, "AI Thinking...");
-//                showText(R.string.AI_Thinking_disturb);
-//                return false;
-//            }
+            if (isAIThinking) {
+                LogUtil.i(Tag, "AI Thinking...");
+                showText(R.string.AI_Thinking_disturb);
+                return false;
+            }
 //        }else{
-//
+
 //        }
         LogUtil.i(Tag, "Touch:\t(" + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()) + ")--------------------------------" + this.toString());
         int pos = getPosition(event.getX(), event.getY());  //µã»÷µÄÆåÅÌÎ»ÖÃ
