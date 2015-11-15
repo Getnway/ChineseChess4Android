@@ -24,8 +24,17 @@
         <activity
             android:name=".Setting"
             android:label="@string/title_activity_setting"
-            android:theme="@style/Base.Theme.AppCompat.Dialog">
+            android:theme="@style/Theme.AppCompat.Dialog">
+        </activity>
+        <activity
+            android:name=".DeviceListActivity"
+            android:label="@string/select_device"
+            android:theme="@style/Theme.AppCompat.Dialog">
         </activity>
     </application>
+
+    //蓝牙权限
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
 
 </manifest>

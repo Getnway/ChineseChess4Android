@@ -20,7 +20,7 @@
     <string name="action_settings">Settings</string>
     <string name="title_activity_game">GameActivity</string>
     <string name="mv_unLegal">请按规则走棋</string>
-    <string name="title_activity_setting">Setting</string>
+    <string name="title_activity_setting">游戏设置</string>
 
     <string name="my_color">我方颜色：</string>
     <string name="red_color">红色</string>
@@ -29,6 +29,18 @@
     <string name="offensive_side">先手</string>
     <string name="defensive_side">后手</string>
     <string name="AI_level">电脑水平：</string>
-    <string name="btn_ok">确定</string>
+    <string name="btn_ok">开始</string>
     <string name="btn_cancel">取消</string>
+    <string name="bluetooth_disable">蓝牙不可用</string>
+    <string name="opponent">对手：</string>
+
+    <!--  DeviceListActivity -->
+    <string name="scanning">搜索设备种...</string>
+    <string name="select_device">请选择连接设备</string>
+    <string name="none_paired">没有已配对设备</string>
+    <string name="none_found">未发现设备</string>
+    <string name="title_paired_devices">配对设备</string>
+    <string name="title_other_devices">其他设备</string>
+    <string name="button_scan">搜索设备</string>
+    <string name="not_connected">蓝牙未连接</string>
 </resources>
