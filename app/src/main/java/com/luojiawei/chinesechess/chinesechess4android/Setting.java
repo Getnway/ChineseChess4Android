@@ -17,18 +17,16 @@ import android.widget.TextView;
 public class Setting extends Activity {
     final String TAG = "Setting";
 
-    final static String MY_COLOT = "my_color";
-    final static String MY_SIDE = "my_side";
-    final static String AI_LEVEL = "AI_level";
-    final static int RED_COLOT = 0;
-    final static int BLACK_COLOT = 1;
-    final static int OFFENSIVE = 0;
-    final static int DEFENSIVE = 1;
-    final static int LOW_RANK = 0;
-    final static int MIDDLE_RANK = 1;
-    final static int HIGH_RANK = 2;
+    final static String LEVEL = "level";
+    final static String IS_OFFENSIVE = "is_offensive";
+    final static String IS_RED_COLOR = "is_red_color";
+    final static int BLUETOOTH = 0;
+    final static int LOW_RANK = 1;
+    final static int MIDDLE_RANK = 2;
+    final static int HIGH_RANK = 3;
 
     boolean AI;     //是否人机对弈
+    int level;
 
     RadioButton mBtnRedColor;
     RadioButton mBtnOffensiveSize;
@@ -45,8 +43,9 @@ public class Setting extends Activity {
         setContentView(R.layout.activity_setting);
 
         Intent intent = getIntent();
+        level = intent.getIntExtra("level", LOW_RANK);
         AI = intent.getBooleanExtra("AI", true);
-        LogUtil.d(TAG, "" + AI);
+        LogUtil.d(TAG, level + " " + AI);
 
         mBtnRedColor = (RadioButton)findViewById(R.id.red_color);
         mBtnRedColor.setChecked(true);
@@ -58,8 +57,15 @@ public class Setting extends Activity {
             mRgLevel = (RadioGroup)findViewById(R.id.rg_level);
             mRgLevel.setVisibility(View.VISIBLE);
             mBtnLowRank = (RadioButton) findViewById(R.id.low_rank);
-            mBtnLowRank.setChecked(true);
             mBtnMiddleRank = (RadioButton) findViewById(R.id.middle_rank);
+            switch (level){
+                case LOW_RANK:
+                    mBtnLowRank.setChecked(true);break;
+                case MIDDLE_RANK:
+                    mBtnMiddleRank.setChecked(true);break;
+                case HIGH_RANK:
+                    ((RadioButton)findViewById(R.id.high_rank)).setChecked(true);break;
+            }
         }
         mBtnOk = (Button)findViewById(R.id.btn_ok);
         mBtnCancel = (Button)findViewById(R.id.btn_cancel);
@@ -70,27 +76,29 @@ public class Setting extends Activity {
                 Intent intent = new Intent();
                 //我方颜色
                 if(mBtnRedColor.isChecked()){
-                    intent.putExtra(MY_COLOT, RED_COLOT);
+                    intent.putExtra(IS_RED_COLOR, true);
                 }else{
-                    intent.putExtra(MY_COLOT, BLACK_COLOT);
+                    intent.putExtra(IS_RED_COLOR, false);
                 }
 
                 //我方先后手
                 if(mBtnOffensiveSize.isChecked()){
-                    intent.putExtra(MY_SIDE, OFFENSIVE);
+                    intent.putExtra(IS_OFFENSIVE, true);
                 }else{
-                    intent.putExtra(MY_SIDE, DEFENSIVE);
+                    intent.putExtra(IS_OFFENSIVE, false);
                 }
 
                 if(AI){
                     //电脑等级
                     if(mBtnLowRank.isChecked()){
-                        intent.putExtra(AI_LEVEL,LOW_RANK);
+                        intent.putExtra(LEVEL,LOW_RANK);
                     }else if(mBtnMiddleRank.isChecked()){
-                        intent.putExtra(AI_LEVEL,MIDDLE_RANK);
+                        intent.putExtra(LEVEL,MIDDLE_RANK);
                     }else{
-                        intent.putExtra(AI_LEVEL,HIGH_RANK);
+                        intent.putExtra(LEVEL,HIGH_RANK);
                     }
+                }else{
+                    intent.putExtra(LEVEL,BLUETOOTH);
                 }
                 setResult(RESULT_OK, intent);
                 finish();

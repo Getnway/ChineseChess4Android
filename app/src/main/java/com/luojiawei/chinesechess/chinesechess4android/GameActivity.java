@@ -9,7 +9,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.Settings;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -50,10 +49,12 @@ public class GameActivity extends Activity implements View.OnClickListener {
 
     private Intent intentSetting;   //设置意图
     private int level;              //模式等级
+    private static boolean isFromMain;
 
     public static void actionStart(Context context, int level){
         Intent intent = new Intent(context, GameActivity.class);
         intent.putExtra("level", level);
+        isFromMain = true;
         context.startActivity(intent);
     }
 
@@ -86,35 +87,11 @@ public class GameActivity extends Activity implements View.OnClickListener {
         Intent intent = getIntent();
         level = intent.getIntExtra("level", LOW_RANK);
         LogUtil.d(TAG, "" + level);
-        switch (level){
-            case BLUETOOTH: //蓝牙对战
-                mTxtOppositeName.setVisibility(View.VISIBLE);
-                gameView.AI = false;
-                if(!isSupportBluetooth()){
-                    finish();
-                }
-                break;
-            case LOW_RANK:      //初级
-                gameView.AI = true;     //是否人机
-                Engine.MIN_LEVEL = 1;   //最低搜索层次
-                Engine.LIMIT_TIME = 30; //限制时间（ms）
-                break;
-            case MIDDLE_RANK:   //中级
-                gameView.AI = true;
-                Engine.MIN_LEVEL = 3;
-                Engine.LIMIT_TIME = 800;
-                break;
-            case HIGH_RANK:     //高级
-                gameView.AI = true;
-                Engine.MIN_LEVEL = 3;
-                Engine.LIMIT_TIME = 5000;
-                break;
-            default:
-                gameView.AI = true;
-                Engine.MIN_LEVEL = 1;
-                Engine.LIMIT_TIME = 100;
-                break;
+        if(level == BLUETOOTH && !isSupportBluetooth()){
+            finish();
+            return;
         }
+        startSettingActivity();
     }
 
     /**
@@ -124,7 +101,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
     private boolean isSupportBluetooth() {
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if(mBluetoothAdapter == null){
-            Toast.makeText(GameActivity.this, R.string.bluetooth_disable, Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), R.string.bluetooth_disable, Toast.LENGTH_LONG).show();
             return false;
         }
         return true;
@@ -133,7 +110,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
     @Override
     protected void onStart() {
         super.onStart();
-        if(!gameView.AI){   //非人机模式，即蓝牙模式
+        if(level == BLUETOOTH){   //蓝牙模式
             if(!mBluetoothAdapter.isEnabled()){ //蓝牙未打开
                 //请求打开蓝牙
                 Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -157,7 +134,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
     @Override
     protected void onResume() {
         super.onResume();
-        if(!gameView.AI){
+        if(level == BLUETOOTH){
             //如果蓝牙服务已停止，则启动服务
             if(mBluetoothService != null && 
                 mBluetoothService.getState() == BluetoothService.STATE_NONE){
@@ -170,7 +147,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if(!gameView.AI){
+        if(level == BLUETOOTH){
             if(mBluetoothService != null){  
                 mBluetoothService.stop();   //停止蓝牙服务
             }
@@ -204,15 +181,8 @@ public class GameActivity extends Activity implements View.OnClickListener {
         switch (v.getId()){
             case R.id.btn_new_game:     //新游戏
                 LogUtil.i(TAG, "newGameClick");
-                gameView.newGame();
-                if(level == BLUETOOTH){
-                    intentSetting.putExtra("AI", false);
-                    LogUtil.d(TAG, "put false");
-                }else{
-                    intentSetting.putExtra("AI", true);
-                    LogUtil.d(TAG, "put true");
-                }
-                startActivityForResult(intentSetting, REQUEST_SETTING);
+//                gameView.newGame();
+                startSettingActivity();
                 break;
             case R.id.btn_flip_board:   //翻转
                 LogUtil.i(TAG,"flipBoardClick");
@@ -226,19 +196,35 @@ public class GameActivity extends Activity implements View.OnClickListener {
         }
     }
 
+    private void startSettingActivity() {
+        if(level == BLUETOOTH){
+            intentSetting.putExtra("AI", false);
+            LogUtil.d(TAG, "put false");
+        }else{
+            intentSetting.putExtra("level", level);
+            intentSetting.putExtra("AI", true);
+            LogUtil.d(TAG, "put true");
+        }
+        startActivityForResult(intentSetting, REQUEST_SETTING);
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(resultCode != RESULT_OK){
+            if(isFromMain){
+                finish();
+            }
             return;
         }
 
         switch (requestCode){
             case REQUEST_SETTING:
-                int color = data.getIntExtra(Setting.MY_COLOT, Setting.RED_COLOT);
-                int side = data.getIntExtra(Setting.MY_SIDE, Setting.OFFENSIVE);
-                int level = data.getIntExtra(Setting.AI_LEVEL, Setting.LOW_RANK);
-                LogUtil.d(TAG, "" + color + side + level);
+                boolean isRed = data.getBooleanExtra(Setting.IS_RED_COLOR, true);
+                boolean isOffensive = data.getBooleanExtra(Setting.IS_OFFENSIVE, true);
+                int level = data.getIntExtra(Setting.LEVEL, Setting.LOW_RANK);
+                LogUtil.d(TAG, "" + level);
+                newGame(isRed, isOffensive, level);
                 break;
 
             case REQUEST_CONNECT_DEVICE:
@@ -250,6 +236,43 @@ public class GameActivity extends Activity implements View.OnClickListener {
                 mOutStringBuffer = new StringBuffer("");
                 break;
         }
+    }
+
+    private void newGame(boolean isRed, boolean isOffensive, int level) {
+        isFromMain = false;
+        LogUtil.d(TAG, "isRed: " + isRed + " isOffensive: " + isOffensive + " level: " + level);
+        switch (level){
+            case BLUETOOTH: //蓝牙对战
+                mTxtOppositeName.setVisibility(View.VISIBLE);
+                gameView.AI = false;
+                break;
+            case LOW_RANK:      //初级
+                gameView.AI = true;     //是否人机
+                Engine.MIN_LEVEL = 1;   //最低搜索层次
+                Engine.LIMIT_TIME = 30; //限制时间（ms）
+                break;
+            case MIDDLE_RANK:   //中级
+                gameView.AI = true;
+                Engine.MIN_LEVEL = 3;
+                Engine.LIMIT_TIME = 800;
+                break;
+            case HIGH_RANK:     //高级
+                gameView.AI = true;
+                Engine.MIN_LEVEL = 3;
+                Engine.LIMIT_TIME = 5000;
+                break;
+            default:
+                gameView.AI = true;
+                Engine.MIN_LEVEL = 1;
+                Engine.LIMIT_TIME = 100;
+                break;
+        }
+        gameView.newGame(isRed, isOffensive);
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
     }
 
     private void connectDevice(Intent data) {

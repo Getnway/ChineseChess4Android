@@ -35,7 +35,7 @@
     <string name="opponent">对手：</string>
 
     <!--  DeviceListActivity -->
-    <string name="scanning">搜索设备种...</string>
+    <string name="scanning">搜索设备中...</string>
     <string name="select_device">请选择连接设备</string>
     <string name="none_paired">没有已配对设备</string>
     <string name="none_found">未发现设备</string>

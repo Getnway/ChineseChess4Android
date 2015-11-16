@@ -85,7 +85,7 @@ public class GameView extends ImageView {
     /**
      * 新游戏
      */
-    public void newGame() {
+    public void newGame(boolean isRed, boolean isOffensive) {
         LogUtil.i(Tag, "newGame()  " + this.toString());
         if (isAIThinking) {
             return;
@@ -96,6 +96,22 @@ public class GameView extends ImageView {
         chessSatck.clear();
 //        ZobristStruct.initZobrist(ChessboardUtil.zobrPlayer,ChessboardUtil.zobrTable);
         copyCurrentMap();
+        if(isRed){  //我方红色
+            isFilpped = false;
+            if(!isOffensive){   //后手
+                //电脑先走
+                ChessboardUtil.changeSide();
+                AIMove();
+            }
+        }else { //我方黑色
+            isFilpped = true;
+            if(!isOffensive){   //后手
+                //电脑先走
+                AIMove();
+            }else {
+                ChessboardUtil.changeSide();
+            }
+        }
         invalidate();
     }
 
@@ -379,14 +395,7 @@ public class GameView extends ImageView {
                     ChessboardUtil.setIrrev();
                 }
                 if(AI) {    //人机对战
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            isAIThinking = true;
-                            responseMove(); //电脑回应一步棋
-                            isAIThinking = false;
-                        }
-                    }.start();
+                    AIMove();
                 }else{  //人人对战
 
                 }
@@ -395,6 +404,17 @@ public class GameView extends ImageView {
             LogUtil.i(Tag, "********isCheck*******");
             showText(R.string.is_check);
         }
+    }
+
+    public void AIMove() {
+        new Thread() {
+            @Override
+            public void run() {
+                isAIThinking = true;
+                responseMove(); //电脑回应一步棋
+                isAIThinking = false;
+            }
+        }.start();
     }
 
     /**
