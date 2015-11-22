@@ -34,10 +34,11 @@ public class GameView extends ImageView {
     boolean isSelectFrom = false;   //是否已选择棋子起点
     boolean isFilpped = false;  //是否翻转棋盘
     boolean isGameOver = false; //是否游戏结束
-    boolean isAIThinking = false;
+    boolean isAIThinking = false;   //是否电脑正在思考
     Stack<UndoStack> chessSatck = new Stack<>();
     Thread searchThread;
     int[] currentMap = new int[256];    //保存当前局面，拷贝自ChessboardUtil.currentMap
+    int currentSide;    //保存当前下棋方
 
     public GameView(Context context) {
         super(context);
@@ -148,6 +149,7 @@ public class GameView extends ImageView {
         for (int i = 0; i < 256; ++i) {
             currentMap[i] = ChessboardUtil.currentMap[i];
         }
+        currentSide = ChessboardUtil.sdPlayer;
     }
 
     @Override
@@ -182,13 +184,13 @@ public class GameView extends ImageView {
         screenX = mChessSize * (ChessboardUtil.getCoordX(posRedSide) - ChessboardUtil.BOARD_LEFT);
         screenY = mChessSize * (ChessboardUtil.getCoordY(posRedSide) - ChessboardUtil.BOARD_TOP) + mChessSize / 2;
         canvas.drawBitmap(mBmAllChess[0], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
-        if(ChessboardUtil.sdPlayer == ChessboardUtil.RED_MOVE){
+        if(currentSide == ChessboardUtil.RED_MOVE){
             canvas.drawBitmap(mBmSelectBoxBlack, null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
         }
         screenX = mChessSize * (ChessboardUtil.getCoordX(posBlackSide) - ChessboardUtil.BOARD_LEFT);
         screenY = mChessSize * (ChessboardUtil.getCoordY(posBlackSide) - ChessboardUtil.BOARD_TOP) + mChessSize / 2;
         canvas.drawBitmap(mBmAllChess[7], null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
-        if(ChessboardUtil.sdPlayer == ChessboardUtil.BLACK_MOVE){
+        if(currentSide == ChessboardUtil.BLACK_MOVE){
             canvas.drawBitmap(mBmSelectBoxRed, null, new Rect(screenX, screenY, screenX + mChessSize, screenY + mChessSize), null);
         }
 
