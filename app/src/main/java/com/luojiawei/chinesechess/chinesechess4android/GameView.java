@@ -87,7 +87,7 @@ public class GameView extends ImageView {
      * 新游戏
      */
     public void newGame(boolean isRed, boolean isOffensive) {
-        LogUtil.i(Tag, "newGame()  " + this.toString());
+        LogUtil.i(Tag, "newGame()  " + isRed + isOffensive);
         if (isAIThinking) {
             return;
         }
@@ -100,15 +100,19 @@ public class GameView extends ImageView {
         if(isRed){  //我方红色
             isFilpped = false;
             if(!isOffensive){   //后手
-                //电脑先走
                 ChessboardUtil.changeSide();
-                AIMove();
+                if(AI) {
+                    //电脑先走
+                    AIMove();
+                }
             }
         }else { //我方黑色
             isFilpped = true;
             if(!isOffensive){   //后手
-                //电脑先走
-                AIMove();
+                if(AI) {
+                    //电脑先走
+                    AIMove();
+                }
             }else {
                 ChessboardUtil.changeSide();
             }
@@ -299,15 +303,12 @@ public class GameView extends ImageView {
             showText(R.string.is_game_over);
             return false;
         }
-//        if(AI){
-            if (isAIThinking) {
-                LogUtil.i(Tag, "AI Thinking...");
-                showText(R.string.AI_Thinking_disturb);
-                return false;
-            }
-//        }else{
+        if (isAIThinking) {
+            LogUtil.i(Tag, "AI Thinking...");
+            showText(R.string.AI_Thinking_disturb);
+            return false;
+        }
 
-//        }
         LogUtil.i(Tag, "Touch:\t(" + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()) + ")--------------------------------" + this.toString());
         int pos = getPosition(event.getX(), event.getY());  //点击的棋盘位置
         LogUtil.i(Tag, "Point:\t" + String.valueOf(pos));
@@ -319,7 +320,10 @@ public class GameView extends ImageView {
         return super.onTouchEvent(event);
     }
 
-    //点击在棋盘上的事件
+    /**
+     * 点击在棋盘上的事件
+     * @param pos 位置
+     */
     private void touchEventOnBoard(int pos) {
         int chessFlag = ChessboardUtil.currentMap[pos]; //点击位置的棋子
         LogUtil.i(Tag, "Piece:\t" + String.valueOf(chessFlag));
@@ -346,6 +350,53 @@ public class GameView extends ImageView {
                 mv = ChessboardUtil.getMove(posFromOpp, posToOpp); //获取走法
             }
             makeAMove(mv);
+        }
+    }
+
+    /**
+     * 对手走一步棋
+     * @param mv 着法
+     */
+    public void oppMove(int mv){
+        int vlRep;
+        LogUtil.i(Tag, "***OPP*** mv:\t" + String.valueOf(mv));
+        LogUtil.i(Tag, "***OPP*** Piece:\tFrom " + String.valueOf(ChessboardUtil.getMoveSrc(mv)) + " To " + String.valueOf(ChessboardUtil.getMoveDst(mv)));
+        if (ChessboardUtil.sdPlayer == 0) {   //红方走棋
+            posFrom = ChessboardUtil.getMoveSrc(mv);
+            posTo = ChessboardUtil.getMoveDst(mv);
+        } else {
+            posFromOpp = ChessboardUtil.getMoveSrc(mv);
+            posToOpp = ChessboardUtil.getMoveDst(mv);
+        }
+
+        int pcCaptured = ChessboardUtil.currentMap[ChessboardUtil.getMoveDst(mv)];
+        chessSatck.push(new UndoStack(mv, pcCaptured));   //下棋入栈
+        ChessboardUtil.makeMove(mv);
+        copyCurrentMap();
+        invalidate();   //重绘棋盘
+        vlRep = ChessboardUtil.repStatus(3);
+        if (Rule.isMate()) {
+            // 如果分出胜负，那么播放胜负的声音，并且弹出不带声音的提示框
+            LogUtil.i(Tag, "*********OPP Win*********");
+            showText(R.string.opposite_win);
+            isGameOver = true;
+        }else if(vlRep>0){
+            vlRep = ChessboardUtil.repValue(vlRep);
+            // 注意："vlRep"是对玩家来说的分值
+            String str = vlRep < -Engine.WIN_VALUE ? "长将作负，请不要气馁！"
+                    : vlRep > Engine.WIN_VALUE ? "对方长将作负，祝贺你取得胜利！" : "双方不变作和，辛苦了！";
+            showText(str);
+            isGameOver = true;
+
+        }else if (ChessboardUtil.nHistoryMoveNum > 100) {
+            String str = "超过自然限着作和，辛苦了！";
+            showText(str);
+            isGameOver = true;
+        }  else {
+            // 如果没有分出胜负，那么播放将军、吃子或一般走子的声音
+            if (ChessboardUtil.captured()) {
+                ChessboardUtil.setIrrev();
+            }
         }
     }
 
@@ -430,7 +481,7 @@ public class GameView extends ImageView {
     /**
      * 电脑回应一步棋
      */
-    void responseMove() {
+    private void responseMove() {
         int vlRep;
         // 电脑搜索并走一步棋
         Engine.searchMain();

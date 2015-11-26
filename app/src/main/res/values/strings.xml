@@ -47,4 +47,7 @@
     <string name="bt_server">创建游戏</string>
     <string name="bt_game">蓝牙游戏：</string>
     <string name="wait">等待连接...</string>
+    <string name="quit">退出</string>
+    <string name="btn_quit">退出</string>
+    <string name="sure_to_quit">确定要退出吗？</string>
 </resources>
