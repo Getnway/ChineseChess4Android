@@ -17,9 +17,12 @@ import android.widget.TextView;
 public class Setting extends Activity {
     final String TAG = "Setting";
 
-    final static String LEVEL = "level";
-    final static String IS_OFFENSIVE = "is_offensive";
-    final static String IS_RED_COLOR = "is_red_color";
+    final static String LEVEL = "level";    //等级
+    final static String IS_OFFENSIVE = "is_offensive";  //是否先手Key
+    final static String IS_RED_COLOR = "is_red_color";  //是否红色Key
+    final static String IS_BT_CLIENT = "is_bt_client";  //是否蓝牙客户端Key
+
+    //等级
     final static int BLUETOOTH = 0;
     final static int LOW_RANK = 1;
     final static int MIDDLE_RANK = 2;
@@ -28,14 +31,18 @@ public class Setting extends Activity {
     boolean AI;     //是否人机对弈
     int level;
 
+    //View
     RadioButton mBtnRedColor;
     RadioButton mBtnOffensiveSize;
     RadioButton mBtnLowRank;
     RadioButton mBtnMiddleRank;
+    RadioButton mBtnClient;
     Button mBtnOk;
     Button mBtnCancel;
     TextView mTxtLevel;
+    TextView mTxtBt;
     RadioGroup mRgLevel;
+    RadioGroup mRgBt;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +73,13 @@ public class Setting extends Activity {
                 case HIGH_RANK:
                     ((RadioButton)findViewById(R.id.high_rank)).setChecked(true);break;
             }
+        }else{
+            mTxtBt = (TextView)findViewById(R.id.txt_bt);
+            mTxtBt.setVisibility(View.VISIBLE);
+            mRgBt = (RadioGroup)findViewById(R.id.rg_bt);
+            mRgBt.setVisibility(View.VISIBLE);
+            mBtnClient = (RadioButton) findViewById(R.id.bt_client);
+            mBtnClient.setChecked(true);
         }
         mBtnOk = (Button)findViewById(R.id.btn_ok);
         mBtnCancel = (Button)findViewById(R.id.btn_cancel);
@@ -98,7 +112,13 @@ public class Setting extends Activity {
                         intent.putExtra(LEVEL,HIGH_RANK);
                     }
                 }else{
-                    intent.putExtra(LEVEL,BLUETOOTH);
+                    //蓝牙
+                    intent.putExtra(LEVEL, BLUETOOTH);
+                    if(mBtnClient.isChecked()){
+                        intent.putExtra(IS_BT_CLIENT, true);
+                    }else{
+                        intent.putExtra(IS_BT_CLIENT, false);
+                    }
                 }
                 setResult(RESULT_OK, intent);
                 finish();

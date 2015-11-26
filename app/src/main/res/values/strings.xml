@@ -43,4 +43,8 @@
     <string name="title_other_devices">其他设备</string>
     <string name="button_scan">搜索设备</string>
     <string name="not_connected">蓝牙未连接</string>
+    <string name="bt_client">连接游戏</string>
+    <string name="bt_server">创建游戏</string>
+    <string name="bt_game">蓝牙游戏：</string>
+    <string name="wait">等待连接...</string>
 </resources>

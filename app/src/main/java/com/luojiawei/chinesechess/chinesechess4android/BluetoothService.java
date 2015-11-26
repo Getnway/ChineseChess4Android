@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2014 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.luojiawei.chinesechess.chinesechess4android;
 
 import android.bluetooth.BluetoothAdapter;
@@ -16,11 +32,26 @@ import java.io.OutputStream;
 import java.util.UUID;
 
 /**
- * Created by L1 on 15-11-13.
+ * This class does all the work for setting up and managing Bluetooth
+ * connections with other devices. It has a thread that listens for
+ * incoming connections, a thread for connecting with a device, and a
+ * thread for performing data transmissions when connected.
  */
 public class BluetoothService {
     // Debugging
     private static final String TAG = "BluetoothService";
+
+    // Name for the SDP record when creating server socket
+    private static final String NAME_SECURE = "BluetoothSecure";
+    private static final String NAME_INSECURE = "BluetoothInsecure";
+
+    // Unique UUID for this application
+    private static final UUID MY_UUID_SECURE =
+            UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
+    //    private static final UUID MY_UUID_SECURE =
+//            UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
+    private static final UUID MY_UUID_INSECURE =
+            UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66");
 
     // Message types sent from the BluetoothChatService Handler
     public static final int MESSAGE_STATE_CHANGE = 1;
@@ -32,16 +63,6 @@ public class BluetoothService {
     // Key names received from the BluetoothChatService Handler
     public static final String DEVICE_NAME = "device_name";
     public static final String TOAST = "toast";
-
-    // Name for the SDP record when creating server socket
-    private static final String NAME_SECURE = "BluetoothChatSecure";
-    private static final String NAME_INSECURE = "BluetoothChatInsecure";
-
-    // Unique UUID for this application
-    private static final UUID MY_UUID_SECURE =
-            UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
-    private static final UUID MY_UUID_INSECURE =
-            UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66");
 
     // Member fields
     private final BluetoothAdapter mAdapter;
@@ -117,7 +138,7 @@ public class BluetoothService {
             mSecureAcceptThread.start();
         }
         if (mInsecureAcceptThread == null) {
-            mInsecureAcceptThread = new AcceptThread(true);
+            mInsecureAcceptThread = new AcceptThread(false);
             mInsecureAcceptThread.start();
         }
     }
@@ -297,9 +318,10 @@ public class BluetoothService {
                             NAME_INSECURE, MY_UUID_INSECURE);
                 }
             } catch (IOException e) {
-                Log.e(TAG, "Socket Type: " + mSocketType + "listen() failed", e);
+                Log.e(TAG, "Socket Type: " + mSocketType + " listen() failed: " + e.toString(), e);
             }
             mmServerSocket = tmp;
+
         }
 
         public void run() {
@@ -312,11 +334,15 @@ public class BluetoothService {
             // Listen to the server socket if we're not connected
             while (mState != STATE_CONNECTED) {
                 try {
+                    if(mmServerSocket == null){
+                        Log.e(TAG, "Socket Type: " + mSocketType + " ServerSocket is null");
+                        throw new IOException("mmServerSocket is null");
+                    }
                     // This is a blocking call and will only return on a
                     // successful connection or an exception
                     socket = mmServerSocket.accept();
                 } catch (IOException e) {
-                    Log.e(TAG, "Socket Type: " + mSocketType + "accept() failed", e);
+                    Log.e(TAG, "Socket Type: " + mSocketType + " accept() failed", e);
                     break;
                 }
 
@@ -348,8 +374,12 @@ public class BluetoothService {
         }
 
         public void cancel() {
-            Log.d(TAG, "Socket Type" + mSocketType + "cancel " + this);
+            Log.d(TAG, "Socket Type " + mSocketType + " cancel " + this);
             try {
+                if(mmServerSocket == null){
+                    Log.e(TAG, "Socket Type: " + mSocketType + " ServerSocket is null");
+                    throw new IOException("mmServerSocket is null");
+                }
                 mmServerSocket.close();
             } catch (IOException e) {
                 Log.e(TAG, "Socket Type" + mSocketType + "close() of server failed", e);
@@ -394,7 +424,10 @@ public class BluetoothService {
             setName("ConnectThread" + mSocketType);
 
             // Always cancel discovery because it will slow down a connection
-            mAdapter.cancelDiscovery();
+            if(mAdapter.cancelDiscovery())
+                Log.d(TAG,"cancelDiscovery()");
+
+
 
             // Make a connection to the BluetoothSocket
             try {
@@ -402,6 +435,7 @@ public class BluetoothService {
                 // successful connection or an exception
                 mmSocket.connect();
             } catch (IOException e) {
+                Log.e(TAG,e.toString());
                 // Close the socket
                 try {
                     mmSocket.close();
@@ -409,7 +443,6 @@ public class BluetoothService {
                     Log.e(TAG, "unable to close() " + mSocketType +
                             " socket during connection failure", e2);
                 }
-                Log.e(TAG, e.getMessage() + e.toString());
                 connectionFailed();
                 return;
             }

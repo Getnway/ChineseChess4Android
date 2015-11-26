@@ -15,7 +15,6 @@ public class ChessboardUtil {
     final static int NULL_MARGIN = 400;   // 空步裁剪的子力边界
 
     static int nHistoryMoveNum;    //历史走法数
-
     // 棋盘范围
     public final static int BOARD_TOP = 3;
     public final static int BOARD_BOTTOM = 12;

@@ -195,10 +195,6 @@ public class GameView extends ImageView {
         }
 
 
-        //»æÖÆÎÄ±¾
-//        canvas.drawLine(0, mBoardBottom, 50, mBoardBottom + 50,null);
-//        mText = "haha";
-//        drawText(canvas);
     }
 
     /**

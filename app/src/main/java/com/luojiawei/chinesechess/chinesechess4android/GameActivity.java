@@ -49,7 +49,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
 
     private Intent intentSetting;   //设置意图
     private int level;              //模式等级
-    private static boolean isFromMain;
+    private static boolean isFromMain;  //是否从主界面进入游戏
 
     public static void actionStart(Context context, int level){
         Intent intent = new Intent(context, GameActivity.class);
@@ -91,20 +91,6 @@ public class GameActivity extends Activity implements View.OnClickListener {
             finish();
             return;
         }
-        startSettingActivity();
-    }
-
-    /**
-     * 获取蓝牙适配器，并检测是否支持蓝牙
-     * @return 蓝牙可用则返回true，否则false
-     */
-    private boolean isSupportBluetooth() {
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if(mBluetoothAdapter == null){
-            Toast.makeText(getApplicationContext(), R.string.bluetooth_disable, Toast.LENGTH_LONG).show();
-            return false;
-        }
-        return true;
     }
 
     @Override
@@ -119,16 +105,9 @@ public class GameActivity extends Activity implements View.OnClickListener {
                 mBluetoothService = new BluetoothService(this, mHandler);
                 mOutStringBuffer = new StringBuffer("");
             }
-            startDeviceList();
         }
-    }
-
-    /**
-     * 打开搜索设别Activity
-     */
-    private void startDeviceList() {
-        Intent serverIntent = new Intent(this, DeviceListActivity.class);
-        startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+        ensureDiscoverable();
+        startSettingActivity();
     }
 
     @Override
@@ -181,7 +160,6 @@ public class GameActivity extends Activity implements View.OnClickListener {
         switch (v.getId()){
             case R.id.btn_new_game:     //新游戏
                 LogUtil.i(TAG, "newGameClick");
-//                gameView.newGame();
                 startSettingActivity();
                 break;
             case R.id.btn_flip_board:   //翻转
@@ -195,19 +173,6 @@ public class GameActivity extends Activity implements View.OnClickListener {
                 break;
         }
     }
-
-    private void startSettingActivity() {
-        if(level == BLUETOOTH){
-            intentSetting.putExtra("AI", false);
-            LogUtil.d(TAG, "put false");
-        }else{
-            intentSetting.putExtra("level", level);
-            intentSetting.putExtra("AI", true);
-            LogUtil.d(TAG, "put true");
-        }
-        startActivityForResult(intentSetting, REQUEST_SETTING);
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -223,8 +188,10 @@ public class GameActivity extends Activity implements View.OnClickListener {
                 boolean isRed = data.getBooleanExtra(Setting.IS_RED_COLOR, true);
                 boolean isOffensive = data.getBooleanExtra(Setting.IS_OFFENSIVE, true);
                 int level = data.getIntExtra(Setting.LEVEL, Setting.LOW_RANK);
+                boolean isBtClient = data.getBooleanExtra(Setting.IS_BT_CLIENT, false);
                 LogUtil.d(TAG, "" + level);
                 newGame(isRed, isOffensive, level);
+                startDeviceList(isBtClient);
                 break;
 
             case REQUEST_CONNECT_DEVICE:
@@ -238,6 +205,12 @@ public class GameActivity extends Activity implements View.OnClickListener {
         }
     }
 
+    /**
+     * 开始新游戏
+     * @param isRed 是否我方红色
+     * @param isOffensive 是否我方先手
+     * @param level 电脑等级
+     */
     private void newGame(boolean isRed, boolean isOffensive, int level) {
         isFromMain = false;
         LogUtil.d(TAG, "isRed: " + isRed + " isOffensive: " + isOffensive + " level: " + level);
@@ -270,11 +243,62 @@ public class GameActivity extends Activity implements View.OnClickListener {
         gameView.newGame(isRed, isOffensive);
     }
 
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
+    /**
+     * 启动设置
+     */
+    private void startSettingActivity() {
+        if(level == BLUETOOTH){
+            intentSetting.putExtra("AI", false);
+            LogUtil.d(TAG, "put false");
+        }else{
+            intentSetting.putExtra("level", level);
+            intentSetting.putExtra("AI", true);
+            LogUtil.d(TAG, "put true");
+        }
+        startActivityForResult(intentSetting, REQUEST_SETTING);
     }
 
+    /**
+     * 获取蓝牙适配器，并检测是否支持蓝牙
+     * @return 蓝牙可用则返回true，否则false
+     */
+    private boolean isSupportBluetooth() {
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if(mBluetoothAdapter == null){
+            Toast.makeText(getApplicationContext(), R.string.bluetooth_disable, Toast.LENGTH_LONG).show();
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 打开搜索设备Activity
+     */
+    private void startDeviceList(boolean isBtClient) {
+        if(isBtClient) {
+            Intent serverIntent = new Intent(this, DeviceListActivity.class);
+            startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+        }else{
+            mTxtOppositeName.setText(R.string.wait);
+        }
+    }
+
+    /**
+     * 使蓝牙可见
+     */
+    private void ensureDiscoverable() {
+        if (mBluetoothAdapter.getScanMode() !=
+                BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+            startActivity(discoverableIntent);
+        }
+    }
+
+    /**
+     * 连接其他设备
+     * @param data 被连接设备信息
+     */
     private void connectDevice(Intent data) {
         // Get the device MAC address
         String address = data.getExtras()
@@ -282,9 +306,13 @@ public class GameActivity extends Activity implements View.OnClickListener {
         // Get the BluetoothDevice object
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
         // Attempt to connect to the device
-        mBluetoothService.connect(device, false);
+        mBluetoothService.connect(device, true);
     }
 
+    /**
+     * 发送信息
+     * @param message 信息内容
+     */
     private void sendMessageByBT(String message) {
         // 发送消息前先确认蓝牙已连接
         if (mBluetoothService.getState() != BluetoothService.STATE_CONNECTED) {
@@ -313,16 +341,13 @@ public class GameActivity extends Activity implements View.OnClickListener {
                         case BluetoothService.STATE_CONNECTED:
                             LogUtil.d(TAG,"STATE_CONNECTED");
                             sendMessageByBT(Build.MODEL);
-//                            setStatus(getString(R.string.title_connected_to, mConnectedDeviceName));
                             break;
                         case BluetoothService.STATE_CONNECTING:
                             LogUtil.d(TAG,"STATE_CONNECTING");
-//                            setStatus(R.string.title_connecting);
                             break;
                         case BluetoothService.STATE_LISTEN:
                         case BluetoothService.STATE_NONE:
                             LogUtil.d(TAG,"STATE_NONE");
-//                            setStatus(R.string.title_not_connected);
                             break;
                     }
                     break;
@@ -332,8 +357,6 @@ public class GameActivity extends Activity implements View.OnClickListener {
                     // construct a string from the buffer
                     String writeMessage = new String(writeBuf);
                     LogUtil.d(TAG, "send: " + writeMessage);
-//                    mTxtReceive.setText(mTxtReceive.getText().toString() + "\nMe: " + writeMessage);
-//                    mConversationArrayAdapter.add("Me:  " + writeMessage);
                     break;
                 case BluetoothService.MESSAGE_READ:
                     LogUtil.d(TAG,"MESSAGE_READ");
@@ -341,8 +364,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
                     LogUtil.d(TAG, "receive: " + readMessage);
-//                    mTxtReceive.setText(mTxtReceive.getText().toString() + "\n" + mConnectedDeviceName + ": " + readMessage);
-//                    mConversationArrayAdapter.add(mConnectedDeviceName + ":  " + readMessage);
+
                     break;
                 case BluetoothService.MESSAGE_DEVICE_NAME:
                     LogUtil.d(TAG,"MESSAGE_DEVICE_NAME");
