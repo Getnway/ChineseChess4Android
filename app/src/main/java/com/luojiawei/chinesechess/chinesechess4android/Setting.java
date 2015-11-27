@@ -33,10 +33,13 @@ public class Setting extends Activity {
 
     //View
     RadioButton mBtnRedColor;
-    RadioButton mBtnOffensiveSize;
+    RadioButton mBtnBlackColor;
+    RadioButton mBtnOffensiveSide;
+    RadioButton mBtnOppositeSide;
     RadioButton mBtnLowRank;
     RadioButton mBtnMiddleRank;
     RadioButton mBtnClient;
+    RadioButton mBtnServer;
     Button mBtnOk;
     Button mBtnCancel;
     TextView mTxtLevel;
@@ -54,10 +57,12 @@ public class Setting extends Activity {
         AI = intent.getBooleanExtra("AI", true);
         LogUtil.d(TAG, level + " " + AI);
 
+        mBtnBlackColor = (RadioButton)findViewById(R.id.black_color);
         mBtnRedColor = (RadioButton)findViewById(R.id.red_color);
         mBtnRedColor.setChecked(true);
-        mBtnOffensiveSize = (RadioButton)findViewById(R.id.offensive_side);
-        mBtnOffensiveSize.setChecked(true);
+        mBtnOppositeSide = (RadioButton)findViewById(R.id.opposite_side);
+        mBtnOffensiveSide = (RadioButton)findViewById(R.id.offensive_side);
+        mBtnOffensiveSide.setChecked(true);
         if(AI) {
             mTxtLevel = (TextView)findViewById(R.id.txt_level);
             mTxtLevel.setVisibility(View.VISIBLE);
@@ -74,12 +79,40 @@ public class Setting extends Activity {
                     ((RadioButton)findViewById(R.id.high_rank)).setChecked(true);break;
             }
         }else{
+            //默认连接游戏，棋色和先后手不可用
+            mBtnRedColor.setEnabled(false);
+            mBtnBlackColor.setEnabled(false);
+            mBtnOffensiveSide.setEnabled(false);
+            mBtnOppositeSide.setEnabled(false);
+
             mTxtBt = (TextView)findViewById(R.id.txt_bt);
             mTxtBt.setVisibility(View.VISIBLE);
             mRgBt = (RadioGroup)findViewById(R.id.rg_bt);
             mRgBt.setVisibility(View.VISIBLE);
+            mBtnServer = (RadioButton) findViewById(R.id.bt_server);
+            mBtnServer.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    //创建游戏，棋色和先后手可用
+                    mBtnRedColor.setEnabled(true);
+                    mBtnBlackColor.setEnabled(true);
+                    mBtnOffensiveSide.setEnabled(true);
+                    mBtnOppositeSide.setEnabled(true);
+                }
+            });
             mBtnClient = (RadioButton) findViewById(R.id.bt_client);
+            mBtnClient.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    //连接游戏，棋色和先后手不可用
+                    mBtnRedColor.setEnabled(false);
+                    mBtnBlackColor.setEnabled(false);
+                    mBtnOffensiveSide.setEnabled(false);
+                    mBtnOppositeSide.setEnabled(false);
+                }
+            });
             mBtnClient.setChecked(true);
+
         }
         mBtnOk = (Button)findViewById(R.id.btn_ok);
         mBtnCancel = (Button)findViewById(R.id.btn_cancel);
@@ -96,7 +129,7 @@ public class Setting extends Activity {
                 }
 
                 //我方先后手
-                if(mBtnOffensiveSize.isChecked()){
+                if(mBtnOffensiveSide.isChecked()){
                     intent.putExtra(IS_OFFENSIVE, true);
                 }else{
                     intent.putExtra(IS_OFFENSIVE, false);

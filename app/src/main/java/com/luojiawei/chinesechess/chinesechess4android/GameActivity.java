@@ -461,6 +461,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
                         case BluetoothService.CONNECT_LOST:
                             mTxtOppositeName.setText(R.string.connect_lost);
                             if(!isDestroyed)
+                                isFromMain = true;
                                 startSettingActivity();
                             break;
                     }
