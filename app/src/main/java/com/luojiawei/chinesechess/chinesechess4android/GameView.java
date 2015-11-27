@@ -19,26 +19,25 @@ import java.util.Stack;
  */
 public class GameView extends ImageView {
     String Tag = "GameView";
-    final int RED = 0, BLACK = 1;  //选择框颜色
-    public boolean AI = true;   //是否人机对战
-    int screenX, screenY;   //棋盘对应的屏幕坐标
-    int mScreenW, mScreenH; //屏幕宽高
-    int mChessSize;  //棋子长宽
-    int mBoardBottom;   //棋盘底边
-    int posFrom = -1, posTo = -1;  //棋子起点和终点
-    int posFromOpp = -1, posToOpp = -1;  //对方棋子起点和终点
+    final int RED = 0, BLACK = 1;                   //选择框颜色
+    public boolean AI = true;                       //是否人机对战
+    int screenX, screenY;                           //棋盘对应的屏幕坐标
+    int mScreenW, mScreenH;                         //屏幕宽高
+    int mChessSize;                                 //棋子长宽
+    int mBoardBottom;                               //棋盘底边
+    int posFrom = -1, posTo = -1;                   //棋子起点和终点
+    int posFromOpp = -1, posToOpp = -1;             //对方棋子起点和终点
     String mText = "Text";
-    Bitmap mBmChessboard;   //棋盘
-    Bitmap[] mBmAllChess = new Bitmap[14]; //棋子
-    Bitmap mBmSelectBoxRed, mBmSelectBoxBlack;   //选择框
-    boolean isSelectFrom = false;   //是否已选择棋子起点
-    boolean isFilpped = false;  //是否翻转棋盘
-    boolean isGameOver = false; //是否游戏结束
-    boolean isAIThinking = false;   //是否电脑正在思考
-    Stack<UndoStack> chessSatck = new Stack<>();
-    Thread searchThread;
-    int[] currentMap = new int[256];    //保存当前局面，拷贝自ChessboardUtil.currentMap
-    int currentSide;    //保存当前下棋方
+    Bitmap mBmChessboard;                           //棋盘
+    Bitmap[] mBmAllChess = new Bitmap[14];          //棋子图片
+    Bitmap mBmSelectBoxRed, mBmSelectBoxBlack;      //选择框
+    boolean isSelectFrom = false;                   //是否已选择棋子起点
+    boolean isFilpped = false;                      //是否翻转棋盘
+    boolean isGameOver = false;                     //是否游戏结束
+    boolean isAIThinking = false;                   //是否电脑正在思考
+    Stack<UndoStack> chessSatck = new Stack<>();    //悔棋栈
+    int[] currentMap = new int[256];                //保存当前局面，拷贝自ChessboardUtil.currentMap
+    int currentSide;                                //保存当前下棋方
 
     public GameView(Context context) {
         super(context);
@@ -66,19 +65,6 @@ public class GameView extends ImageView {
         setImageBitmap(Bitmap.createScaledBitmap(mBmSelectBoxRed, mScreenW, mScreenW / 9 * 12, false));   //可确定布局大小
         chessSatck.clear();
 
-//        searchThread = new Thread() {
-//            @Override
-//            public void run() {
-//                try {
-//                    isAIThinking = true;
-//                    responseMove();
-//                    isAIThinking = false;
-//                } catch (Exception e) {
-//                    // TODO Auto-generated catch block
-//                    e.printStackTrace();
-//                }
-//            }
-//        };
         LogUtil.i("GameView", "Screen:" + String.valueOf(mScreenH) + " X " + String.valueOf(mScreenW));
         LogUtil.i("GameView", "ChessSize:" + String.valueOf(mChessSize));
     }

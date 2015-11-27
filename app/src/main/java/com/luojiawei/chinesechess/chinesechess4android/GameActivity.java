@@ -2,13 +2,11 @@ package com.luojiawei.chinesechess.chinesechess4android;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.DatePickerDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -22,11 +20,6 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.common.api.GoogleApiClient;
-
 
 public class GameActivity extends Activity implements View.OnClickListener {
     String TAG = "GameActivity";
@@ -54,14 +47,14 @@ public class GameActivity extends Activity implements View.OnClickListener {
     private StringBuffer mOutStringBuffer;              //接收到的数据
     private BluetoothAdapter mBluetoothAdapter = null;  //蓝牙适配器
     private BluetoothService mBluetoothService = null;  //蓝牙服务
-    private boolean isBtClient;     //是否作为蓝牙客户端
+    private boolean isBtClient;                         //是否作为蓝牙客户端
 
-    private StringBuffer gameInfo;      //蓝牙传输信息
-    private final String TYPE_NEW = "NEW";    //蓝牙信息类型，新局
-    private final String TYPE_MOVE = "MOVE";  //蓝牙信息类型，着法
+    private StringBuffer gameInfo;                      //蓝牙传输信息
+    private final String TYPE_NEW = "NEW";              //蓝牙信息类型，新局
+    private final String TYPE_MOVE = "MOVE";            //蓝牙信息类型，着法
 
-    private Intent intentSetting;   //设置意图
-    private int level;              //模式等级
+    private Intent intentSetting;       //设置意图
+    private int level;                  //模式等级
     private static boolean isFromMain;  //是否从主界面进入游戏
     private static boolean isGameing;   //是否正在游戏中
 
@@ -462,11 +455,5 @@ public class GameActivity extends Activity implements View.OnClickListener {
             }
         }
     };
-
-    @Override
-    public void onStop() {
-        super.onStop();
-
-    }
 
 }
