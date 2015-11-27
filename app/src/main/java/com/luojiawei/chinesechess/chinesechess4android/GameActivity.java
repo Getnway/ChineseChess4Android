@@ -192,6 +192,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode != RESULT_OK) {
             if (isFromMain) {
+                isDestroyed = true;
                 finish();
             }
             return;
@@ -243,6 +244,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
         public void onClick(DialogInterface dialog, int which) {
             switch (which){
                 case DialogInterface.BUTTON_POSITIVE:
+                    isDestroyed = true;
                     GameActivity.this.finish();
                     break;
                 case DialogInterface.BUTTON_NEGATIVE:
@@ -490,6 +492,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
         }
 
         public void finishActivity(){
+            isDestroyed = true;
             GameActivity.this.finish();
         }
     }
