@@ -13,8 +13,8 @@
     <string name="AI_Thinking_wait">电脑正在思考中...请稍后再试！</string>
     <string name="AI_Thinking_disturb">电脑正在思考中...请勿打扰！</string>
     <string name="AI_Thinking">电脑正在思考中...</string>
-    <string name="human_win">恭喜获胜！</string>
-    <string name="opposite_win">你输了！</string>
+    <string name="human_win">恭喜获胜！再来一局？</string>
+    <string name="opposite_win">你输了！再来一局？</string>
     <string name="is_check">被将军啦！</string>
     <string name="is_game_over">该局已结束啦！开始新局吧^_^</string>
     <string name="action_settings">Settings</string>
@@ -50,4 +50,11 @@
     <string name="quit">退出</string>
     <string name="btn_quit">退出</string>
     <string name="sure_to_quit">确定要退出吗？</string>
+    <string name="connected_to">已连接到：</string>
+    <string name="long_lose">长将作负，请不要气馁！再来一局？</string>
+    <string name="long_win">对方长将作负，祝贺你取得胜利！再来一局？</string>
+    <string name="he_qi">双方不变作和，辛苦了！再来一局？</string>
+    <string name="long_he_qi">超过自然限着作和，辛苦了！再来一局？</string>
+    <string name="unable_connect">未能连接设备</string>
+    <string name="connect_lost">连接已断开</string>
 </resources>

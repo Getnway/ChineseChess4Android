@@ -63,6 +63,8 @@ public class BluetoothService {
     // Key names received from the BluetoothChatService Handler
     public static final String DEVICE_NAME = "device_name";
     public static final String TOAST = "toast";
+    public static final String UNABLE_CONNECT = "unable_connect";
+    public static final String CONNECT_LOST = "connect_lost";
 
     // Member fields
     private final BluetoothAdapter mAdapter;
@@ -271,7 +273,7 @@ public class BluetoothService {
         // Send a failure message back to the Activity
         Message msg = mHandler.obtainMessage(MESSAGE_TOAST);
         Bundle bundle = new Bundle();
-        bundle.putString(TOAST, "Unable to connect device");
+        bundle.putString(TOAST, UNABLE_CONNECT);
         msg.setData(bundle);
         mHandler.sendMessage(msg);
 
@@ -286,7 +288,7 @@ public class BluetoothService {
         // Send a failure message back to the Activity
         Message msg = mHandler.obtainMessage(MESSAGE_TOAST);
         Bundle bundle = new Bundle();
-        bundle.putString(TOAST, "Device connection was lost");
+        bundle.putString(TOAST, CONNECT_LOST);
         msg.setData(bundle);
         mHandler.sendMessage(msg);
 

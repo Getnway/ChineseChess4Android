@@ -1,6 +1,8 @@
 package com.luojiawei.chinesechess.chinesechess4android;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -38,6 +40,7 @@ public class GameView extends ImageView {
     Stack<UndoStack> chessSatck = new Stack<>();    //悔棋栈
     int[] currentMap = new int[256];                //保存当前局面，拷贝自ChessboardUtil.currentMap
     int currentSide;                                //保存当前下棋方
+    GameActivity.CommunicationHelper mCommunicationHelper;
 
     public GameView(Context context) {
         super(context);
@@ -47,6 +50,10 @@ public class GameView extends ImageView {
     public GameView(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
         init(context);
+    }
+
+    public void setSendMessage(GameActivity.CommunicationHelper communicationHelper){
+        mCommunicationHelper = communicationHelper;
     }
 
     private void init(Context context) {
@@ -286,7 +293,7 @@ public class GameView extends ImageView {
         }
         if(isGameOver){
             LogUtil.i(Tag, "Is Game Over!!!");
-            showText(R.string.is_game_over);
+            gameoverDialog(R.string.is_game_over);
             return false;
         }
         if (isAIThinking) {
@@ -364,19 +371,17 @@ public class GameView extends ImageView {
         if (Rule.isMate()) {
             // 如果分出胜负，那么播放胜负的声音，并且弹出不带声音的提示框
             LogUtil.i(Tag, "*********OPP Win*********");
-            showText(R.string.opposite_win);
+            gameoverDialog(R.string.opposite_win);
             isGameOver = true;
         }else if(vlRep>0){
             vlRep = ChessboardUtil.repValue(vlRep);
             // 注意："vlRep"是对玩家来说的分值
-            String str = vlRep < -Engine.WIN_VALUE ? "长将作负，请不要气馁！"
-                    : vlRep > Engine.WIN_VALUE ? "对方长将作负，祝贺你取得胜利！" : "双方不变作和，辛苦了！";
-            showText(str);
+            int resId = vlRep < -Engine.WIN_VALUE ? R.string.long_lose
+                    : vlRep > Engine.WIN_VALUE ? R.string.long_win : R.string.he_qi;
+            gameoverDialog(resId);
             isGameOver = true;
-
         }else if (ChessboardUtil.nHistoryMoveNum > 100) {
-            String str = "超过自然限着作和，辛苦了！";
-            showText(str);
+            gameoverDialog(R.string.long_he_qi);
             isGameOver = true;
         }  else {
             // 如果没有分出胜负，那么播放将军、吃子或一般走子的声音
@@ -409,20 +414,18 @@ public class GameView extends ImageView {
             // 检查重复局面
             vlRep = ChessboardUtil.repStatus(3);
             if (Rule.isMate()) {  //将死
-//                        Toast.makeText(getContext(), R.string.is_win,Toast.LENGTH_LONG);/
                 LogUtil.i(Tag, "*********Win*********");
-                showText(R.string.human_win);
+                gameoverDialog(R.string.human_win);
                 isGameOver = true;
             }  else if (vlRep > 0) {
                 vlRep = ChessboardUtil.repValue(vlRep);
                 // 注意："vlRep"是对电脑来说的分值
-                String str = vlRep > Engine.WIN_VALUE ? "长将作负，请不要气馁！" :
-                        vlRep < -Engine.WIN_VALUE ? "对方长将作负，祝贺你取得胜利！" : "双方不变作和，辛苦了！";
-                showText(str);
+                int resId = vlRep < Engine.WIN_VALUE ? R.string.long_lose
+                        : vlRep > -Engine.WIN_VALUE ? R.string.long_win : R.string.he_qi;
+                gameoverDialog(resId);
                 isGameOver = true;
             } else if (ChessboardUtil.nHistoryMoveNum > 100) {
-                String str = "超过自然限着作和，辛苦了！";
-                showText(str);
+                gameoverDialog(R.string.long_he_qi);
                 isGameOver = true;
             } else {
                 // 如果没有分出胜负，那么播放将军、吃子或一般走子的声音
@@ -432,7 +435,7 @@ public class GameView extends ImageView {
                 if(AI) {    //人机对战
                     AIMove();
                 }else{  //人人对战
-
+                    mCommunicationHelper.send(String.valueOf(mv));
                 }
             }
         } else {  //走棋失败，被将军中
@@ -492,19 +495,17 @@ public class GameView extends ImageView {
         if (Rule.isMate()) {
             // 如果分出胜负，那么播放胜负的声音，并且弹出不带声音的提示框
             LogUtil.i(Tag, "*********AI Win*********");
-            showText(R.string.opposite_win);
+            gameoverDialog(R.string.opposite_win);
             isGameOver = true;
         }else if(vlRep>0){
             vlRep = ChessboardUtil.repValue(vlRep);
             // 注意："vlRep"是对玩家来说的分值
-            String str = vlRep < -Engine.WIN_VALUE ? "长将作负，请不要气馁！"
-                    : vlRep > Engine.WIN_VALUE ? "对方长将作负，祝贺你取得胜利！" : "双方不变作和，辛苦了！";
-            showText(str);
+            int resId = vlRep < -Engine.WIN_VALUE ? R.string.long_lose
+                    : vlRep > Engine.WIN_VALUE ? R.string.long_win : R.string.he_qi;
+            gameoverDialog(resId);
             isGameOver = true;
-
         }else if (ChessboardUtil.nHistoryMoveNum > 100) {
-            String str = "超过自然限着作和，辛苦了！";
-            showText(str);
+            gameoverDialog(R.string.long_he_qi);
             isGameOver = true;
         }  else {
             // 如果没有分出胜负，那么播放将军、吃子或一般走子的声音
@@ -556,4 +557,34 @@ public class GameView extends ImageView {
         Toast.makeText(getContext(),msg,Toast.LENGTH_LONG).show();
     }
 
+    /**
+     * 游戏结束弹出框
+     * @param resId 弹出的消息内容资源id
+     */
+    private void gameoverDialog(int resId){
+        // 创建退出对话框
+        AlertDialog alertDialog = new AlertDialog.Builder(getContext()).create();
+        // 设置对话框消息
+        alertDialog.setMessage(getContext().getString(resId));
+        // 添加选择按钮并注册监听
+        alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, getContext().getString(R.string.btn_quit), listener);
+        alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getContext().getString(R.string.btn_cancel), listener);
+        // 显示对话框
+        alertDialog.show();
+    }
+
+    //Dialog监听
+    DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            switch (which){
+                case DialogInterface.BUTTON_POSITIVE:   //确认则打开设置
+                    mCommunicationHelper.startSettring();
+                    break;
+                case DialogInterface.BUTTON_NEGATIVE:   //取消则退到游戏主界面
+                    mCommunicationHelper.finishActivity();
+                    break;
+            }
+        }
+    };
 }

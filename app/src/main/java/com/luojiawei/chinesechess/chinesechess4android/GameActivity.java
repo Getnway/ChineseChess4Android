@@ -57,6 +57,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
     private int level;                  //模式等级
     private static boolean isFromMain;  //是否从主界面进入游戏
     private static boolean isGameing;   //是否正在游戏中
+    private boolean isDestroyed = false;
 
     public static void actionStart(Context context, int level) {
         Intent intent = new Intent(context, GameActivity.class);
@@ -87,6 +88,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
         mBtnUndo = (Button) findViewById(R.id.btn_undo);
         mBtnUndo.setOnClickListener(this);
         gameView = (GameView) findViewById(R.id.game_view);
+        gameView.setSendMessage(new CommunicationHelper());
 
         //设置意图
         intentSetting = new Intent(this, Setting.class);
@@ -136,6 +138,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        isDestroyed = true;
         if (level == BLUETOOTH) {
             if (mBluetoothService != null) {
                 mBluetoothService.stop();   //停止蓝牙服务
@@ -387,7 +390,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
      * @param message 消息内容
      */
     private void readMessage(String message){
-        LogUtil.d(TAG,"readMessage: " + message);
+        LogUtil.d(TAG, "readMessage: " + message);
         String[] msgs = message.split("-");
         switch (msgs[0]){
             case TYPE_NEW:
@@ -439,7 +442,7 @@ public class GameActivity extends Activity implements View.OnClickListener {
                     LogUtil.d(TAG, "MESSAGE_DEVICE_NAME");
                     // save the connected device's name
                     mConnectedDeviceName = msg.getData().getString(BluetoothService.DEVICE_NAME);
-                    Toast.makeText(getApplication(), "Connected to "
+                    Toast.makeText(getApplication(), getString(R.string.connected_to)
                             + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
                     mTxtOppositeName.setText(getString(R.string.opponent) + mConnectedDeviceName);
                     if(!isBtClient) {   //如果作为服务端则发送开局信息
@@ -449,11 +452,45 @@ public class GameActivity extends Activity implements View.OnClickListener {
                     break;
                 case BluetoothService.MESSAGE_TOAST:
                     LogUtil.d(TAG, "MESSAGE_TOAST");
-                    Toast.makeText(getApplication(), msg.getData().getString(BluetoothService.TOAST),
-                            Toast.LENGTH_SHORT).show();
+                    switch (msg.getData().getString(BluetoothService.TOAST)){
+                        case BluetoothService.UNABLE_CONNECT:
+                            mTxtOppositeName.setText(R.string.unable_connect);
+                            Toast.makeText(getApplication(), R.string.unable_connect,
+                                Toast.LENGTH_SHORT).show();
+                            break;
+                        case BluetoothService.CONNECT_LOST:
+                            mTxtOppositeName.setText(R.string.connect_lost);
+                            if(!isDestroyed)
+                                startSettingActivity();
+                            break;
+                    }
                     break;
             }
         }
     };
+
+    /**
+     * 通信内部类
+     */
+    public class CommunicationHelper{
+        public void send(String message){
+            StringBuffer sb = new StringBuffer(TYPE_MOVE);
+            sb.append("-");
+            sb.append(message);
+            sb.append("-");
+            LogUtil.d(TAG,"send" + sb.toString());
+            sendMessageByBT(sb.toString());
+        }
+
+        public void startSettring(){
+            isGameing = false;
+            isFromMain = true;
+            startSettingActivity();
+        }
+
+        public void finishActivity(){
+            GameActivity.this.finish();
+        }
+    }
 
 }
